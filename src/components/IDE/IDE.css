@@ -13,10 +13,8 @@
 }
 
 .ide-panel-left {
-  width: 250px;
-  min-width: 200px;
+  min-width: 150px;
   max-width: 400px;
-  resize: horizontal;
   overflow: auto;
   flex-shrink: 0;
 }
