@@ -18,17 +18,17 @@ export function Canvas() {
     }
   }, [selectedFile]);
 
-  // 코드 업데이트 이벤트 구독 (Monaco Editor에서 코드 변경 시)
+  // 코드 저장 이벤트 구독 (Ctrl+S로 저장 시)
   useEffect(() => {
-    const handleCodeUpdate = (event: CustomEvent<string>) => {
+    const handleCodeSaved = (event: CustomEvent<string>) => {
       if (selectedFile && (selectedFile.endsWith('.tsx') || selectedFile.endsWith('.jsx'))) {
         setComponentCode(event.detail);
       }
     };
 
-    window.addEventListener('code-updated' as any, handleCodeUpdate as EventListener);
+    window.addEventListener('code-saved' as any, handleCodeSaved as EventListener);
     return () => {
-      window.removeEventListener('code-updated' as any, handleCodeUpdate as EventListener);
+      window.removeEventListener('code-saved' as any, handleCodeSaved as EventListener);
     };
   }, [selectedFile]);
 

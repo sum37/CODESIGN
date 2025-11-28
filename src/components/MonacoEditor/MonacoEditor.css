@@ -17,9 +17,33 @@
   font-size: 13px;
   color: #cccccc;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.monaco-editor-unsaved-indicator {
+  color: #ff6b6b;
+  font-size: 10px;
+  line-height: 1;
+  display: inline-block;
 }
 
 .monaco-editor-content {
   flex: 1;
   overflow: hidden;
+}
+
+/* Monaco Editor 텍스트 색상 강조 */
+.monaco-editor-content .monaco-editor {
+  color: #ffffff !important;
+}
+
+.monaco-editor-content .monaco-editor .view-lines .view-line {
+  color: #ffffff !important;
+}
+
+.monaco-editor-content .monaco-editor .mtk1 {
+  color: #ffffff !important;
+  opacity: 1 !important;
 }
