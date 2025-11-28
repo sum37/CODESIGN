@@ -6,7 +6,7 @@ import './IDE.css';
 
 export function IDE() {
   const [fileTreeWidth, setFileTreeWidth] = useState<number | null>(null);
-  const [canvasWidth, setCanvasWidth] = useState<number | null>(null);
+  const [editorWidth, setEditorWidth] = useState<number | null>(null);
   const [isResizingLeft, setIsResizingLeft] = useState(false);
   const [isResizingRight, setIsResizingRight] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -19,16 +19,15 @@ export function IDE() {
 
   useEffect(() => {
     // 초기 너비 설정
-    if (containerRef.current && fileTreeWidth === null && canvasWidth === null) {
-      const containerWidth = containerRef.current.offsetWidth;
+    if (containerRef.current && fileTreeWidth === null) {
       const initialFileTreeWidth = 250;
-      const availableWidth = containerWidth - initialFileTreeWidth;
-      const initialCanvasWidth = availableWidth * 0.6;
-      
       setFileTreeWidth(initialFileTreeWidth);
-      setCanvasWidth(initialCanvasWidth);
     }
-  }, [fileTreeWidth, canvasWidth]);
+    if (containerRef.current && editorWidth === null) {
+      const initialEditorWidth = 400;
+      setEditorWidth(initialEditorWidth);
+    }
+  }, [fileTreeWidth, editorWidth]);
 
   // FileTree와 Canvas 사이 리사이저
   const handleLeftResizerMouseDown = (e: React.MouseEvent) => {
@@ -45,35 +44,19 @@ export function IDE() {
   // FileTree와 Canvas 사이 리사이징
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizingLeft || !containerRef.current || fileTreeWidth === null || canvasWidth === null) return;
+      if (!isResizingLeft || !containerRef.current || fileTreeWidth === null) return;
 
-      const containerWidth = containerRef.current.offsetWidth;
       const mouseX = e.clientX;
       const containerLeft = containerRef.current.getBoundingClientRect().left;
       const newFileTreeWidth = mouseX - containerLeft;
 
-      // FileTree + Canvas의 총 너비 계산
-      const totalLeftWidth = fileTreeWidth + canvasWidth;
-      
       // 최소/최대 너비 제한
       const clampedFileTreeWidth = Math.max(
         minFileTreeWidth, 
         Math.min(maxFileTreeWidth, newFileTreeWidth)
       );
       
-      // Canvas 너비는 총 너비에서 FileTree 너비를 뺀 값
-      const newCanvasWidth = totalLeftWidth - clampedFileTreeWidth;
-      
-      // Canvas 최소 너비 확인
-      if (newCanvasWidth >= minCanvasWidth) {
-        setFileTreeWidth(clampedFileTreeWidth);
-        setCanvasWidth(newCanvasWidth);
-      } else {
-        // Canvas가 최소 너비보다 작아지면 FileTree 너비를 제한
-        const maxAllowedFileTreeWidth = totalLeftWidth - minCanvasWidth;
-        setFileTreeWidth(Math.min(clampedFileTreeWidth, maxAllowedFileTreeWidth));
-        setCanvasWidth(Math.max(minCanvasWidth, totalLeftWidth - Math.min(clampedFileTreeWidth, maxAllowedFileTreeWidth)));
-      }
+      setFileTreeWidth(clampedFileTreeWidth);
     };
 
     const handleMouseUp = () => {
@@ -93,24 +76,22 @@ export function IDE() {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
-  }, [isResizingLeft, fileTreeWidth, canvasWidth, minFileTreeWidth, maxFileTreeWidth, minCanvasWidth]);
+  }, [isResizingLeft, fileTreeWidth, minFileTreeWidth, maxFileTreeWidth]);
 
   // Canvas와 Code Editor 사이 리사이징
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizingRight || !containerRef.current || fileTreeWidth === null || canvasWidth === null) return;
+      if (!isResizingRight || !containerRef.current || fileTreeWidth === null) return;
 
       const containerWidth = containerRef.current.offsetWidth;
-      const availableWidth = containerWidth - fileTreeWidth;
       const mouseX = e.clientX;
       const containerLeft = containerRef.current.getBoundingClientRect().left;
-      const newCanvasWidth = mouseX - containerLeft - fileTreeWidth;
+      const newEditorWidth = containerWidth - (mouseX - containerLeft);
 
       // 최소/최대 너비 제한
-      const maxCanvasWidth = availableWidth - minEditorWidth;
-      const clampedWidth = Math.max(minCanvasWidth, Math.min(maxCanvasWidth, newCanvasWidth));
+      const clampedEditorWidth = Math.max(minEditorWidth, newEditorWidth);
       
-      setCanvasWidth(clampedWidth);
+      setEditorWidth(clampedEditorWidth);
     };
 
     const handleMouseUp = () => {
@@ -130,11 +111,7 @@ export function IDE() {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
-  }, [isResizingRight, fileTreeWidth, minCanvasWidth, minEditorWidth]);
-
-  const editorWidth = containerRef.current && fileTreeWidth !== null && canvasWidth !== null
-    ? containerRef.current.offsetWidth - fileTreeWidth - canvasWidth
-    : null;
+  }, [isResizingRight, fileTreeWidth, minEditorWidth]);
 
   return (
     <div className="ide-container" ref={containerRef}>
@@ -150,7 +127,7 @@ export function IDE() {
       />
       <div 
         className="ide-panel ide-panel-center"
-        style={canvasWidth !== null ? { width: `${canvasWidth}px`, flex: 'none' } : undefined}
+        style={{ flex: 1, minWidth: `${minCanvasWidth}px` }}
       >
         <Canvas />
       </div>
@@ -160,7 +137,7 @@ export function IDE() {
       />
       <div 
         className="ide-panel ide-panel-right"
-        style={editorWidth !== null ? { width: `${editorWidth}px`, flex: 'none' } : undefined}
+        style={editorWidth !== null ? { width: `${editorWidth}px`, flex: 'none' } : { width: '400px', minWidth: `${minEditorWidth}px` }}
       >
         <MonacoEditor />
       </div>
