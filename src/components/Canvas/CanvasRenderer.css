@@ -1,11 +1,16 @@
 .canvas-renderer-container {
   position: relative;
-  width: 100%;
+  width: 1440px;
+  min-width: 1440px;
+  max-width: 1440px;
   min-height: 600px;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
-  overflow: hidden;
+  margin: 0 auto;
+  /* 고정 폭을 유지하고 스크롤로 처리 */
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .canvas-element-content {

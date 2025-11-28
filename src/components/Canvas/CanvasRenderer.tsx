@@ -425,7 +425,16 @@ export function CanvasRenderer({ code, onCodeChange }: CanvasRendererProps) {
   }
 
   return (
-    <div ref={containerRef} className="canvas-renderer-container">
+    <div 
+      ref={containerRef} 
+      className="canvas-renderer-container"
+      style={{
+        width: '1440px',
+        minWidth: '1440px',
+        maxWidth: '1440px',
+        flexShrink: 0,
+      }}
+    >
       {renderElement(componentTree, 0, true)}
     </div>
   );
