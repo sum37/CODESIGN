@@ -18,19 +18,36 @@
   max-width: 400px;
   resize: horizontal;
   overflow: auto;
+  flex-shrink: 0;
 }
 
 .ide-panel-center {
-  flex: 1;
   min-width: 300px;
   background: #f5f5f5;
   overflow: auto;
+  flex-shrink: 0;
 }
 
 .ide-panel-right {
-  width: 40%;
   min-width: 300px;
-  max-width: 50%;
-  resize: horizontal;
   overflow: hidden;
+  flex-shrink: 0;
+}
+
+.ide-resizer {
+  width: 4px;
+  background: #e0e0e0;
+  cursor: col-resize;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  transition: background-color 0.2s;
+}
+
+.ide-resizer:hover {
+  background: #007acc;
+}
+
+.ide-resizer:active {
+  background: #005a9e;
 }
