@@ -271,10 +271,22 @@ export function parseTailwindClasses(className: string): Record<string, string |
     if (cls === 'list-disc') styles.listStyleType = 'disc';
     if (cls === 'list-inside') styles.listStylePosition = 'inside';
     
-    // Space
+    // Space (자식 요소 간 간격)
     if (cls.startsWith('space-y-')) {
       const space = cls.replace('space-y-', '');
-      // 간단히 처리 (실제로는 첫 번째 자식 제외하고 margin-top 적용)
+      const spaceValue = parseSize(space);
+      if (spaceValue) {
+        // 특별한 속성으로 저장 (CanvasRenderer에서 처리)
+        (styles as any).__spaceY__ = spaceValue;
+      }
+    }
+    if (cls.startsWith('space-x-')) {
+      const space = cls.replace('space-x-', '');
+      const spaceValue = parseSize(space);
+      if (spaceValue) {
+        // 특별한 속성으로 저장 (CanvasRenderer에서 처리)
+        (styles as any).__spaceX__ = spaceValue;
+      }
     }
   });
   

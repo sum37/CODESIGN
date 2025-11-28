@@ -244,8 +244,12 @@ export function CanvasRenderer({ code, onCodeChange }: CanvasRendererProps) {
     const specialElements = ['option', 'textarea', 'select'];
     const isSpecialElement = specialElements.includes(node.type);
     
-    // 루트 요소와 자식 요소 모두 일반 요소로 렌더링 (레이아웃 유지)
-    const ElementTag = node.type as keyof JSX.IntrinsicElements;
+    // 컴포넌트 이름 처리: 대문자로 시작하면 React 컴포넌트로 인식
+    // motion.div 같은 경우는 이미 getJSXElementName에서 div로 변환됨
+    const isReactComponent = /^[A-Z]/.test(node.type);
+    
+    // React 컴포넌트인 경우 div로 대체하여 렌더링 (외부 라이브러리 컴포넌트는 실제로 로드할 수 없으므로)
+    const ElementTag = (isReactComponent ? 'div' : node.type) as keyof JSX.IntrinsicElements;
     
     // Void element는 자식 요소를 렌더링하지 않음
     if (isVoidElement) {
@@ -304,6 +308,9 @@ export function CanvasRenderer({ code, onCodeChange }: CanvasRendererProps) {
         // className과 style은 이미 처리됨
         if (key === 'className' || key === 'style' || key === '_spread') return;
         
+        // shadcn/ui의 특수 prop 필터링
+        if (key === 'asChild') return; // asChild는 DOM 요소에 전달하지 않음
+        
         // 객체가 아닌 값만 전달 (문자열, 숫자, 불린, null만)
         if (value === null || value === undefined) {
           // null/undefined는 전달하지 않음
@@ -316,6 +323,10 @@ export function CanvasRenderer({ code, onCodeChange }: CanvasRendererProps) {
         }
       });
     }
+    
+    // Space 처리: space-y-* 또는 space-x-* 클래스 확인
+    const spaceY = (tailwindStyles as any).__spaceY__;
+    const spaceX = (tailwindStyles as any).__spaceX__;
     
     // 자식 요소도 Rnd 없이 렌더링 (드래그는 나중에 필요시 추가)
     const renderChildren = () => {
@@ -361,7 +372,24 @@ export function CanvasRenderer({ code, onCodeChange }: CanvasRendererProps) {
               return null;
             }
             
-            const rendered = renderElement(child as ComponentNode, depth + 1, false);
+            // space-y-* 또는 space-x-* 처리: 첫 번째 자식은 제외하고 마진 적용
+            let childToRender = child as ComponentNode;
+            if (idx > 0 && (spaceY || spaceX)) {
+              // 첫 번째 자식이 아니면 마진 적용을 위해 새로운 객체 생성
+              childToRender = {
+                ...child,
+                props: {
+                  ...child.props,
+                  style: {
+                    ...(child.props?.style || {}),
+                    ...(spaceY ? { marginTop: spaceY } : {}),
+                    ...(spaceX ? { marginLeft: spaceX } : {}),
+                  },
+                },
+              } as ComponentNode;
+            }
+            
+            const rendered = renderElement(childToRender, depth + 1, false);
             // null이나 유효하지 않은 요소는 렌더링하지 않음
             if (!rendered) return null;
             return (

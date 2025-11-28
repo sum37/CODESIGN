@@ -4,6 +4,7 @@ import { parseComponent, ComponentNode } from './componentParser';
 import * as parser from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
+import * as recast from 'recast';
 
 /**
  * 컴포넌트 레지스트리: import된 컴포넌트를 캐시
@@ -79,11 +80,19 @@ export async function loadImportedComponent(
     // 파일 읽기
     const code = await readFile(resolvedPath);
     
+    // 컴포넌트 내부의 객체 정의 추출 (예: colorClasses, borderColor)
+    const componentObjects = extractComponentObjects(code);
+    
     // 컴포넌트 파싱 (빈 importedComponents로 시작)
     const parsed = parseComponent(code, {
       currentFile: resolvedPath,
       importedComponents: new Map(),
     });
+    
+    // 컴포넌트 객체 정보를 parsed에 추가
+    if (componentObjects && Object.keys(componentObjects).length > 0) {
+      (parsed as any).componentObjects = componentObjects;
+    }
     
     // 캐시에 저장
     componentRegistry.set(cacheKey, parsed);
@@ -154,6 +163,69 @@ export function parseImports(code: string): ImportInfo[] {
 /**
  * 컴포넌트 레지스트리 초기화
  */
+/**
+ * 컴포넌트 코드에서 객체 정의 추출 (예: colorClasses, borderColor)
+ */
+function extractComponentObjects(code: string): Record<string, Record<string, string>> {
+  try {
+    const ast = parser.parse(code, {
+      sourceType: 'module',
+      plugins: ['jsx', 'typescript', 'decorators-legacy', 'classProperties'],
+    });
+    
+    const objects: Record<string, Record<string, string>> = {};
+    
+    traverse(ast, {
+      VariableDeclarator(path) {
+        if (t.isIdentifier(path.node.id)) {
+          const varName = path.node.id.name;
+          // colorClasses, borderColor 같은 객체 찾기
+          if (varName.includes('Color') || varName.includes('Class') || varName.includes('color') || varName.includes('border')) {
+            if (path.node.init && t.isObjectExpression(path.node.init)) {
+              const obj: Record<string, string> = {};
+              path.node.init.properties.forEach((prop) => {
+                if (t.isObjectProperty(prop)) {
+                  // 키 추출
+                  let key: string | null = null;
+                  if (t.isStringLiteral(prop.key)) {
+                    key = prop.key.value;
+                  } else if (t.isIdentifier(prop.key)) {
+                    key = prop.key.name;
+                  } else if (t.isNumericLiteral(prop.key)) {
+                    key = String(prop.key.value);
+                  }
+                  
+                  // 값 추출
+                  let value: string | null = null;
+                  if (t.isStringLiteral(prop.value)) {
+                    value = prop.value.value;
+                  } else if (t.isTemplateLiteral(prop.value)) {
+                    // 템플릿 리터럴도 처리
+                    value = prop.value.quasis.map(q => q.value.raw).join('');
+                  }
+                  
+                  if (key && value) {
+                    obj[key] = value;
+                  }
+                }
+              });
+              if (Object.keys(obj).length > 0) {
+                objects[varName] = obj;
+                console.log(`컴포넌트 객체 추출: ${varName}`, obj);
+              }
+            }
+          }
+        }
+      },
+    });
+    
+    return objects;
+  } catch (error) {
+    console.error('컴포넌트 객체 추출 실패:', error);
+    return {};
+  }
+}
+
 export function clearComponentRegistry() {
   componentRegistry.clear();
 }
