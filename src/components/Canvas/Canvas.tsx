@@ -161,10 +161,15 @@ export function Canvas() {
           style={{
             transform: `scale(${zoomLevel})`,
             transformOrigin: 'top left',
+            position: 'relative',
           }}
         >
           {componentCode ? (
-            <CanvasRenderer code={componentCode} onCodeChange={handleCanvasChange} />
+            <CanvasRenderer 
+              code={componentCode} 
+              onCodeChange={handleCanvasChange}
+              zoomLevel={zoomLevel}
+            />
           ) : (
             <div className="canvas-empty">
               <p>React 컴포넌트 파일(.tsx, .jsx)을 선택하면 여기에 렌더링됩니다.</p>
