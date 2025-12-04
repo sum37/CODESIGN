@@ -221,24 +221,46 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     const root = reactRootRef.current;
     if (!root) return { left: 0, top: 0 };
 
-    // transform: scale()이 적용된 경우, getBoundingClientRect()는
-    // 스케일이 적용된 후의 화면 좌표를 반환하므로 부정확할 수 있습니다
-    // offsetLeft/offsetTop을 사용하여 부모 기준 상대 위치 계산
-    // 이 방법은 transform의 영향을 받지 않습니다
-    let left = el.offsetLeft;
-    let top = el.offsetTop;
+    // position: absolute인 요소는 이미 style.left/top이 설정되어 있을 수 있음
+    const computedStyle = window.getComputedStyle(el);
+    const position = computedStyle.position;
     
-    // offsetParent를 따라 올라가면서 누적
-    let parent = el.offsetParent as HTMLElement | null;
-    while (parent && parent !== root) {
-      // root의 직접 자식인지 확인
-      if (parent === root.parentElement || parent.contains(root)) {
-        break;
+    // position: absolute이고 style.left/top이 명시적으로 설정된 경우
+    if (position === 'absolute') {
+      const styleLeft = el.style.left;
+      const styleTop = el.style.top;
+      
+      if (styleLeft && styleTop && styleLeft !== 'auto' && styleTop !== 'auto') {
+        // px 단위로 파싱
+        let left = parseFloat(styleLeft) || 0;
+        let top = parseFloat(styleTop) || 0;
+        
+        // offsetParent가 root이거나 null인 경우 바로 반환
+        if (el.offsetParent === root || el.offsetParent === null) {
+          return { left, top };
+        }
+        
+        // offsetParent가 root의 자식인 경우, offsetParent의 위치를 더해야 함
+        // getBoundingClientRect()를 사용하여 더 정확한 위치 계산
+        const elementRect = el.getBoundingClientRect();
+        const rootRect = root.getBoundingClientRect();
+        
+        // 루트 컨테이너 기준 상대 위치 계산 (zoom 고려)
+        const relativeLeft = (elementRect.left - rootRect.left) / zoomLevel;
+        const relativeTop = (elementRect.top - rootRect.top) / zoomLevel;
+        
+        return { left: relativeLeft, top: relativeTop };
       }
-      left += parent.offsetLeft;
-      top += parent.offsetTop;
-      parent = parent.offsetParent as HTMLElement | null;
     }
+
+    // 일반적인 경우: getBoundingClientRect()를 사용하여 더 정확한 위치 계산
+    // transform: scale()이 적용된 경우도 정확하게 처리
+    const elementRect = el.getBoundingClientRect();
+    const rootRect = root.getBoundingClientRect();
+    
+    // 루트 컨테이너 기준 상대 위치 계산 (zoom 고려)
+    const left = (elementRect.left - rootRect.left) / zoomLevel;
+    const top = (elementRect.top - rootRect.top) / zoomLevel;
 
     return { left, top };
   };
@@ -423,6 +445,15 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
           size: { width: originalWidth, height: originalHeight },
         });
         onCodeChange(updatedCode);
+        
+        // 드롭 후 ghost box를 실제 요소 위치와 정확히 일치하도록 재생성
+        // 약간의 지연을 두어 DOM 업데이트가 완료된 후 실행
+        setTimeout(() => {
+          if (actualElement && selectedElementId === elementId) {
+            // ghost box를 완전히 다시 생성하여 위치와 크기를 정확히 맞춤
+            createGhostBoxForElement(actualElement, elementId);
+          }
+        }, 50);
       };
 
       document.addEventListener('mousemove', onMouseMove);
