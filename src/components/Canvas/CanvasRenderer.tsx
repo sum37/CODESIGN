@@ -429,9 +429,32 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
           }
           
           // 실제 요소를 absolute로 변경하고 위치 및 크기 설정
+          // finalLeft와 finalTop은 루트 컨테이너 기준 좌표이므로,
+          // 실제 요소의 부모가 루트가 아닌 경우 부모 기준 좌표로 변환해야 함
+          const parentElement = actualElement.parentElement;
+          const root = reactRootRef.current;
+          
+          let elementLeft = finalLeft;
+          let elementTop = finalTop;
+          
+          // 부모 요소가 루트 컨테이너가 아닌 경우, 부모 기준 좌표로 변환
+          if (parentElement && root && parentElement !== root) {
+            // 부모 요소의 루트 기준 위치 계산
+            const parentRect = parentElement.getBoundingClientRect();
+            const rootRect = root.getBoundingClientRect();
+            
+            // 부모의 루트 기준 위치 (zoom 고려)
+            const parentLeft = (parentRect.left - rootRect.left) / zoomLevel;
+            const parentTop = (parentRect.top - rootRect.top) / zoomLevel;
+            
+            // 부모 기준 좌표로 변환
+            elementLeft = finalLeft - parentLeft;
+            elementTop = finalTop - parentTop;
+          }
+          
           actualElement.style.position = 'absolute';
-          actualElement.style.left = finalLeft + 'px';
-          actualElement.style.top = finalTop + 'px';
+          actualElement.style.left = elementLeft + 'px';
+          actualElement.style.top = elementTop + 'px';
           actualElement.style.width = originalWidth + 'px';
           actualElement.style.height = originalHeight + 'px';
           actualElement.style.margin = '0';
