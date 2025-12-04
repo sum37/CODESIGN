@@ -517,8 +517,9 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         const onMouseMove = (e: MouseEvent) => {
           if (!resizing) return;
 
-          const dx = e.clientX - startX;
-          const dy = e.clientY - startY;
+          // 마우스 이동 거리를 zoom으로 나누어 실제 좌표 계산
+          const dx = (e.clientX - startX) / zoomLevel;
+          const dy = (e.clientY - startY) / zoomLevel;
 
           let newLeft = startLeft;
           let newTop = startTop;
@@ -551,9 +552,32 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
           box.style.height = newHeight + 'px';
 
           if (actualElement) {
+            // newLeft와 newTop은 루트 컨테이너 기준 좌표이므로,
+            // 실제 요소의 부모가 루트가 아닌 경우 부모 기준 좌표로 변환해야 함
+            const parentElement = actualElement.parentElement;
+            const root = reactRootRef.current;
+            
+            let elementLeft = newLeft;
+            let elementTop = newTop;
+            
+            // 부모 요소가 루트 컨테이너가 아닌 경우, 부모 기준 좌표로 변환
+            if (parentElement && root && parentElement !== root) {
+              // 부모 요소의 루트 기준 위치 계산
+              const parentRect = parentElement.getBoundingClientRect();
+              const rootRect = root.getBoundingClientRect();
+              
+              // 부모의 루트 기준 위치 (zoom 고려)
+              const parentLeft = (parentRect.left - rootRect.left) / zoomLevel;
+              const parentTop = (parentRect.top - rootRect.top) / zoomLevel;
+              
+              // 부모 기준 좌표로 변환
+              elementLeft = newLeft - parentLeft;
+              elementTop = newTop - parentTop;
+            }
+            
             actualElement.style.position = 'absolute';
-            actualElement.style.left = newLeft + 'px';
-            actualElement.style.top = newTop + 'px';
+            actualElement.style.left = elementLeft + 'px';
+            actualElement.style.top = elementTop + 'px';
             actualElement.style.width = newWidth + 'px';
             actualElement.style.height = newHeight + 'px';
             actualElement.style.margin = '0';
@@ -573,6 +597,36 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
           const finalWidth = parseFloat(box.style.width) || 0;
           const finalHeight = parseFloat(box.style.height) || 0;
 
+          // 실제 요소의 위치를 최종 확인 및 업데이트
+          if (actualElement) {
+            const parentElement = actualElement.parentElement;
+            const root = reactRootRef.current;
+            
+            let elementLeft = finalLeft;
+            let elementTop = finalTop;
+            
+            // 부모 요소가 루트 컨테이너가 아닌 경우, 부모 기준 좌표로 변환
+            if (parentElement && root && parentElement !== root) {
+              const parentRect = parentElement.getBoundingClientRect();
+              const rootRect = root.getBoundingClientRect();
+              
+              const parentLeft = (parentRect.left - rootRect.left) / zoomLevel;
+              const parentTop = (parentRect.top - rootRect.top) / zoomLevel;
+              
+              elementLeft = finalLeft - parentLeft;
+              elementTop = finalTop - parentTop;
+            }
+            
+            // 최종 위치 및 크기 설정
+            actualElement.style.position = 'absolute';
+            actualElement.style.left = elementLeft + 'px';
+            actualElement.style.top = elementTop + 'px';
+            actualElement.style.width = finalWidth + 'px';
+            actualElement.style.height = finalHeight + 'px';
+            actualElement.style.margin = '0';
+          }
+
+          // 코드 업데이트는 루트 기준 좌표로 저장
           updateElementPosition(elementId, {
             x: finalLeft,
             y: finalTop,
@@ -584,6 +638,13 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
             size: { width: finalWidth, height: finalHeight },
           });
           onCodeChange(updatedCode);
+          
+          // 리사이즈 후 ghost box를 실제 요소 위치와 정확히 일치하도록 재생성
+          setTimeout(() => {
+            if (actualElement && selectedElementId === elementId) {
+              createGhostBoxForElement(actualElement, elementId);
+            }
+          }, 50);
         };
 
         document.addEventListener('mousemove', onMouseMove);
