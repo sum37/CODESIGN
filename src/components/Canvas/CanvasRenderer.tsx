@@ -324,7 +324,6 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     let originalWidth = 0;
     let originalMarginTop = 0;
     let originalMarginBottom = 0;
-    let existingPlaceholderHeight = 0; // 기존 placeholder 높이 저장
 
     box.addEventListener('mousedown', (e) => {
       // 리사이즈 핸들을 클릭한 경우는 드래그하지 않음
@@ -344,28 +343,60 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         actualElement = root.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
         
         if (actualElement && actualElement.parentElement) {
-          // 기존 placeholder가 있으면 그 높이를 저장 (이미 드래그된 요소의 경우)
+          // 기존 placeholder 확인 (이미 드래그/리사이즈된 요소)
           const existingPlaceholder = actualElement.parentElement.querySelector(`[data-placeholder-for="${elementId}"]`) as HTMLElement;
-          if (existingPlaceholder) {
-            existingPlaceholderHeight = parseFloat(existingPlaceholder.style.height) || 0;
-          } else {
-            existingPlaceholderHeight = 0;
-          }
           
           // 원래 크기와 마진 저장 (레이아웃 유지용)
-          // zoom이 적용된 rect를 zoom으로 나누어 실제 크기 계산
           const rect = actualElement.getBoundingClientRect();
           const computedStyle = window.getComputedStyle(actualElement);
           
-          // 요소가 실제로 차지하는 공간 계산 (margin 포함)
-          // getBoundingClientRect()는 border-box를 기준으로 하므로
-          // margin을 별도로 계산해야 함
           originalWidth = rect.width / zoomLevel;
           originalHeight = rect.height / zoomLevel;
           originalMarginTop = (parseFloat(computedStyle.marginTop) || 0) / zoomLevel;
           originalMarginBottom = (parseFloat(computedStyle.marginBottom) || 0) / zoomLevel;
           
-          // 드래그 중에는 실제 요소를 투명하게 만들기 (레이아웃은 유지)
+          // 아직 absolute가 아닌 경우에만 placeholder 생성 및 absolute로 변경
+          if (!existingPlaceholder && computedStyle.position !== 'absolute') {
+            // 현재 요소의 절대 위치 계산
+            const rootRect = root.getBoundingClientRect();
+            const currentLeft = (rect.left - rootRect.left) / zoomLevel;
+            const currentTop = (rect.top - rootRect.top) / zoomLevel;
+            
+            // 부모 기준 좌표 계산
+            const parentElement = actualElement.parentElement;
+            let elementLeft = currentLeft;
+            let elementTop = currentTop;
+            
+            if (parentElement && parentElement !== root) {
+              const parentRect = parentElement.getBoundingClientRect();
+              const parentLeft = (parentRect.left - rootRect.left) / zoomLevel;
+              const parentTop = (parentRect.top - rootRect.top) / zoomLevel;
+              elementLeft = currentLeft - parentLeft;
+              elementTop = currentTop - parentTop;
+            }
+            
+            // 1. 먼저 요소를 absolute로 변경
+            actualElement.style.position = 'absolute';
+            actualElement.style.left = elementLeft + 'px';
+            actualElement.style.top = elementTop + 'px';
+            actualElement.style.width = originalWidth + 'px';
+            actualElement.style.height = originalHeight + 'px';
+            actualElement.style.margin = '0';
+            
+            // 2. 그 다음 placeholder 생성
+            placeholder = document.createElement('div');
+            placeholder.style.width = originalWidth + 'px';
+            placeholder.style.height = (originalHeight + originalMarginTop + originalMarginBottom) + 'px';
+            placeholder.style.marginTop = '0';
+            placeholder.style.marginBottom = '0';
+            placeholder.style.visibility = 'hidden';
+            placeholder.style.pointerEvents = 'none';
+            placeholder.style.boxSizing = 'border-box';
+            placeholder.setAttribute('data-placeholder-for', elementId);
+            actualElement.parentElement?.insertBefore(placeholder, actualElement);
+          }
+          
+          // 드래그 중에는 실제 요소를 투명하게 만들기
           actualElement.style.opacity = '0.3';
         }
       }
@@ -406,41 +437,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
 
         // 드래그가 끝나면 실제 요소의 위치를 업데이트
         if (actualElement && actualElement.parentElement) {
-          // 기존 placeholder가 있으면 제거
-          const existingPlaceholder = actualElement.parentElement.querySelector(`[data-placeholder-for="${elementId}"]`);
-          if (existingPlaceholder) {
-            existingPlaceholder.remove();
-          }
-          
-          // 실제 요소를 absolute로 변경하기 전에 placeholder 삽입
-          // placeholder는 요소의 원래 위치(형제 요소 사이)에 삽입되어야 함
-          const nextSibling = actualElement.nextSibling;
-          
-          // 원래 위치에 placeholder 삽입하여 공간 유지
-          // placeholder는 요소가 차지하는 전체 공간(margin 포함)을 유지해야 함
-          placeholder = document.createElement('div');
-          placeholder.style.width = originalWidth + 'px';
-          // 기존 placeholder가 있었다면 그 높이를 사용 (이미 드래그된 요소의 경우)
-          // 없었다면 현재 요소의 height + margin으로 계산
-          const placeholderHeight = existingPlaceholderHeight > 0 
-            ? existingPlaceholderHeight 
-            : (originalHeight + originalMarginTop + originalMarginBottom);
-          placeholder.style.height = placeholderHeight + 'px';
-          placeholder.style.marginTop = '0';
-          placeholder.style.marginBottom = '0';
-          placeholder.style.visibility = 'hidden';
-          placeholder.style.pointerEvents = 'none';
-          placeholder.style.boxSizing = 'border-box';
-          placeholder.setAttribute('data-placeholder-for', elementId);
-          
-          // placeholder를 요소의 다음 형제 위치에 삽입 (요소가 absolute로 변경되기 전)
-          if (nextSibling) {
-            actualElement.parentElement.insertBefore(placeholder, nextSibling);
-          } else {
-            actualElement.parentElement.appendChild(placeholder);
-          }
-          
-          // 실제 요소를 absolute로 변경하고 위치 및 크기 설정
+          // 실제 요소의 위치 및 크기 설정 (이미 absolute임)
           // finalLeft와 finalTop은 루트 컨테이너 기준 좌표이므로,
           // 실제 요소의 부모가 루트가 아닌 경우 부모 기준 좌표로 변환해야 함
           const parentElement = actualElement.parentElement;
@@ -464,12 +461,9 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
             elementTop = finalTop - parentTop;
           }
           
-          actualElement.style.position = 'absolute';
+          // 위치만 업데이트 (이미 absolute임, placeholder도 이미 존재함)
           actualElement.style.left = elementLeft + 'px';
           actualElement.style.top = elementTop + 'px';
-          actualElement.style.width = originalWidth + 'px';
-          actualElement.style.height = originalHeight + 'px';
-          actualElement.style.margin = '0';
           actualElement.style.opacity = '1'; // 불투명도 복원
         }
 
@@ -522,6 +516,12 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     let startWidth = 0;
     let startHeight = 0;
     let direction = '';
+    let actualElement: HTMLElement | null = null;
+    let placeholder: HTMLElement | null = null;
+    let originalWidth = 0;
+    let originalHeight = 0;
+    let originalMarginTop = 0;
+    let originalMarginBottom = 0;
 
     handles.forEach((handle) => {
       handle.addEventListener('mousedown', (e) => {
@@ -539,7 +539,66 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         e.preventDefault();
 
         const root = reactRootRef.current;
-        const actualElement = root?.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
+        actualElement = root?.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
+        
+        // 리사이즈 시작 시 placeholder 생성 및 요소를 absolute로 변경 (레이아웃 유지용)
+        if (actualElement && actualElement.parentElement) {
+          // 기존 placeholder 확인 (이미 드래그/리사이즈된 요소)
+          const existingPlaceholder = actualElement.parentElement.querySelector(`[data-placeholder-for="${elementId}"]`) as HTMLElement;
+          
+          // 원래 크기와 마진 저장
+          const rect = actualElement.getBoundingClientRect();
+          const computedStyle = window.getComputedStyle(actualElement);
+          
+          originalWidth = rect.width / zoomLevel;
+          originalHeight = rect.height / zoomLevel;
+          originalMarginTop = (parseFloat(computedStyle.marginTop) || 0) / zoomLevel;
+          originalMarginBottom = (parseFloat(computedStyle.marginBottom) || 0) / zoomLevel;
+          
+          // 현재 요소의 절대 위치 계산 (absolute로 변환하기 전에)
+          const rootRect = root?.getBoundingClientRect();
+          if (!rootRect) return;
+          const currentLeft = (rect.left - rootRect.left) / zoomLevel;
+          const currentTop = (rect.top - rootRect.top) / zoomLevel;
+          
+          // 아직 placeholder가 없고, 아직 absolute가 아닌 경우에만 placeholder 생성
+          if (!existingPlaceholder && computedStyle.position !== 'absolute') {
+            // 부모 기준 좌표 계산
+            const parentElement = actualElement.parentElement;
+            let elementLeft = currentLeft;
+            let elementTop = currentTop;
+            
+            if (parentElement && parentElement !== root) {
+              const parentRect = parentElement.getBoundingClientRect();
+              const parentLeft = (parentRect.left - rootRect.left) / zoomLevel;
+              const parentTop = (parentRect.top - rootRect.top) / zoomLevel;
+              elementLeft = currentLeft - parentLeft;
+              elementTop = currentTop - parentTop;
+            }
+            
+            // 1. 먼저 요소를 absolute로 변경 (현재 위치 유지)
+            actualElement.style.position = 'absolute';
+            actualElement.style.left = elementLeft + 'px';
+            actualElement.style.top = elementTop + 'px';
+            actualElement.style.width = originalWidth + 'px';
+            actualElement.style.height = originalHeight + 'px';
+            actualElement.style.margin = '0';
+            
+            // 2. 그 다음 placeholder 생성 (요소가 빠져나간 자리를 채움)
+            placeholder = document.createElement('div');
+            placeholder.style.width = originalWidth + 'px';
+            placeholder.style.height = (originalHeight + originalMarginTop + originalMarginBottom) + 'px';
+            placeholder.style.marginTop = '0';
+            placeholder.style.marginBottom = '0';
+            placeholder.style.visibility = 'hidden';
+            placeholder.style.pointerEvents = 'none';
+            placeholder.style.boxSizing = 'border-box';
+            placeholder.setAttribute('data-placeholder-for', elementId);
+            
+            // 요소 바로 앞에 삽입 (요소는 이미 absolute이므로 레이아웃에 영향 없음)
+            actualElement.parentElement?.insertBefore(placeholder, actualElement);
+          }
+        }
 
         const onMouseMove = (e: MouseEvent) => {
           if (!resizing) return;
@@ -624,8 +683,8 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
           const finalWidth = parseFloat(box.style.width) || 0;
           const finalHeight = parseFloat(box.style.height) || 0;
 
-          // 실제 요소의 위치를 최종 확인 및 업데이트
-          if (actualElement) {
+          // 실제 요소의 위치를 최종 확인 및 업데이트 (placeholder는 이미 mousedown에서 생성됨)
+          if (actualElement && actualElement.parentElement) {
             const parentElement = actualElement.parentElement;
             const root = reactRootRef.current;
             

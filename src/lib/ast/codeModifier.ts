@@ -100,6 +100,7 @@ export function updateElementInCode(
 
 /**
  * 문자열 기반으로 코드 수정 (AST 파싱 에러 방지용)
+ * 정확한 문자 위치(loc)를 사용해서 해당 요소만 수정
  */
 function updateCodeByLocation(
   code: string,
@@ -144,6 +145,13 @@ function updateCodeByLocation(
     styleUpdates.height = `${Math.round(updates.size.height)}px`;
   }
   
+  // 코드에서 정확한 문자 인덱스 계산
+  let startCharIndex = 0;
+  for (let i = 0; i < targetLine; i++) {
+    startCharIndex += lines[i].length + 1; // +1 for newline
+  }
+  startCharIndex += column;
+  
   // 태그의 여는 부분 끝 찾기 (> 위치)
   let openingTagEndLine = targetLine;
   let openingTagEndCol = -1;
@@ -167,21 +175,18 @@ function updateCodeByLocation(
     return code;
   }
   
-  // 여는 태그 전체 내용 추출
-  let openingTagContent = '';
-  for (let i = targetLine; i <= openingTagEndLine; i++) {
-    if (i === targetLine && i === openingTagEndLine) {
-      openingTagContent = lines[i].substring(column, openingTagEndCol + 1);
-    } else if (i === targetLine) {
-      openingTagContent = lines[i].substring(column) + '\n';
-    } else if (i === openingTagEndLine) {
-      openingTagContent += lines[i].substring(0, openingTagEndCol + 1);
-    } else {
-      openingTagContent += lines[i] + '\n';
-    }
+  // 끝 문자 인덱스 계산
+  let endCharIndex = 0;
+  for (let i = 0; i < openingTagEndLine; i++) {
+    endCharIndex += lines[i].length + 1;
   }
+  endCharIndex += openingTagEndCol + 1; // +1 to include '>'
+  
+  // 여는 태그 전체 내용 추출 (정확한 인덱스 사용)
+  const openingTagContent = code.substring(startCharIndex, endCharIndex);
   
   console.log('[codeModifier] 여는 태그 내용:', openingTagContent.substring(0, 100) + '...');
+  console.log('[codeModifier] 위치 인덱스:', { startCharIndex, endCharIndex });
   
   // 모든 style={{...}} 패턴 제거 (중첩된 중괄호 처리)
   let cleanedTag = openingTagContent;
@@ -235,8 +240,10 @@ function updateCodeByLocation(
   
   console.log('[codeModifier] 새 태그:', newOpeningTag.substring(0, 100) + '...');
   
-  // 원본 코드에서 교체
-  return code.replace(openingTagContent, newOpeningTag);
+  // 정확한 위치에서 교체 (code.replace 대신 substring 사용)
+  const result = code.substring(0, startCharIndex) + newOpeningTag + code.substring(endCharIndex);
+  
+  return result;
 }
 
 function updateJSXElementStyle(
