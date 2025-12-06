@@ -324,6 +324,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     let originalWidth = 0;
     let originalMarginTop = 0;
     let originalMarginBottom = 0;
+    let existingPlaceholderHeight = 0; // 기존 placeholder 높이 저장
 
     box.addEventListener('mousedown', (e) => {
       // 리사이즈 핸들을 클릭한 경우는 드래그하지 않음
@@ -342,7 +343,15 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       if (root) {
         actualElement = root.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
         
-        if (actualElement) {
+        if (actualElement && actualElement.parentElement) {
+          // 기존 placeholder가 있으면 그 높이를 저장 (이미 드래그된 요소의 경우)
+          const existingPlaceholder = actualElement.parentElement.querySelector(`[data-placeholder-for="${elementId}"]`) as HTMLElement;
+          if (existingPlaceholder) {
+            existingPlaceholderHeight = parseFloat(existingPlaceholder.style.height) || 0;
+          } else {
+            existingPlaceholderHeight = 0;
+          }
+          
           // 원래 크기와 마진 저장 (레이아웃 유지용)
           // zoom이 적용된 rect를 zoom으로 나누어 실제 크기 계산
           const rect = actualElement.getBoundingClientRect();
@@ -411,8 +420,12 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
           // placeholder는 요소가 차지하는 전체 공간(margin 포함)을 유지해야 함
           placeholder = document.createElement('div');
           placeholder.style.width = originalWidth + 'px';
-          // 높이는 요소의 height + marginTop + marginBottom (전체 차지 공간)
-          placeholder.style.height = (originalHeight + originalMarginTop + originalMarginBottom) + 'px';
+          // 기존 placeholder가 있었다면 그 높이를 사용 (이미 드래그된 요소의 경우)
+          // 없었다면 현재 요소의 height + margin으로 계산
+          const placeholderHeight = existingPlaceholderHeight > 0 
+            ? existingPlaceholderHeight 
+            : (originalHeight + originalMarginTop + originalMarginBottom);
+          placeholder.style.height = placeholderHeight + 'px';
           placeholder.style.marginTop = '0';
           placeholder.style.marginBottom = '0';
           placeholder.style.visibility = 'hidden';
@@ -708,9 +721,9 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       ...baseStyle,
       ...positioningStyle,
       ...paddingStyle,
-      // border는 선택 시에만 표시
-      border: isSelected ? '2px solid #007acc' : 'none',
-      outline: isSelected ? 'none' : 'none',
+      // outline은 레이아웃에 영향을 주지 않음 (border 대신 사용)
+      outline: isSelected ? '2px solid #007acc' : 'none',
+      outlineOffset: '-2px', // 요소 안쪽으로 outline 표시
       // 편집 가능한 요소는 클릭 가능하도록 커서 변경
       cursor: 'pointer',
       overflow: 'visible',
