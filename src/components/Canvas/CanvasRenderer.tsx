@@ -161,7 +161,6 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     }
 
     const root = reactRootRef.current;
-    const overlay = overlayRef.current;
     console.log('Ghost box 생성 시도, selectedElementId:', selectedElementId);
     const element = root.querySelector(`[data-element-id="${selectedElementId}"]`) as HTMLElement;
 

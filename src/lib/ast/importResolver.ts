@@ -4,7 +4,6 @@ import { parseComponent, ComponentNode } from './componentParser';
 import * as parser from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import * as recast from 'recast';
 
 /**
  * 컴포넌트 레지스트리: import된 컴포넌트를 캐시
@@ -126,7 +125,6 @@ export function parseImports(code: string): ImportInfo[] {
       ImportDeclaration(path) {
         const source = path.node.source.value;
         const imported: string[] = [];
-        let hasDefault = false;
         
         let defaultName: string | undefined = undefined;
         

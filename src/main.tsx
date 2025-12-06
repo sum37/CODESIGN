@@ -7,7 +7,7 @@ if (typeof window !== 'undefined') {
       version: 'v16.0.0',
     };
   }
-  if (typeof globalThis !== 'undefined' && !globalThis.process) {
+  if (typeof globalThis !== 'undefined' && !(globalThis as any).process) {
     (globalThis as any).process = (window as any).process;
   }
 }

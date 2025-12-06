@@ -36,7 +36,8 @@ export async function readDirectory(dirPath: string): Promise<FileSystemNode> {
     };
 
     for (const entry of entries) {
-      if (shouldIgnore(entry.name)) {
+      // entry.name이 undefined일 수 있으므로 체크
+      if (!entry.name || shouldIgnore(entry.name)) {
         continue;
       }
 
@@ -55,7 +56,7 @@ export async function readDirectory(dirPath: string): Promise<FileSystemNode> {
       } else {
         // 파일인 경우
         node.children!.push({
-          name: entry.name,
+          name: entry.name!,
           path: entry.path,
           type: 'file',
         });

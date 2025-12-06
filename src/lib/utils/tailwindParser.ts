@@ -290,7 +290,7 @@ export function parseTailwindClasses(className: string): Record<string, string |
     }
   });
   
-  return styles;
+  return styles as Record<string, string | number>;
 }
 
 function parseSize(size: string): string {

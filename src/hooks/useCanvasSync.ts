@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { useProjectStore } from '../stores/projectStore';
-import { useCanvasStore } from '../stores/canvasStore';
 import { updateElementInCode } from '../lib/ast/codeModifier';
 import { readFile, writeFile } from '../lib/fileSystem/fileSystem';
 
@@ -10,7 +9,6 @@ import { readFile, writeFile } from '../lib/fileSystem/fileSystem';
  */
 export function useCanvasSync() {
   const { selectedFile } = useProjectStore();
-  const { elementPositions } = useCanvasStore();
 
   const syncCanvasToCode = useCallback(async (updatedCode: string) => {
     // 이 함수는 Canvas에서 직접 호출되므로, 
