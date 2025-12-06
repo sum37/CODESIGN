@@ -475,11 +475,26 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
 
         // 코드 업데이트 (위치와 크기 모두 포함)
         updateElementPosition(elementId, { x: finalLeft, y: finalTop });
+        
+        // 요소의 AST 위치 정보 가져오기
+        const locData = actualElement?.getAttribute('data-loc');
+        console.log('[CanvasRenderer] 드래그 완료. elementId:', elementId, 'locData:', locData);
+        const loc = locData ? JSON.parse(locData) : undefined;
+        console.log('[CanvasRenderer] 파싱된 loc:', loc);
+        
         const updatedCode = updateElementInCode(code, elementId, {
           position: { x: finalLeft, y: finalTop },
           size: { width: originalWidth, height: originalHeight },
-        });
+        }, loc);
+        
+        // 코드가 변경되었는지 확인
+        const codeChanged = updatedCode !== code;
+        console.log('[CanvasRenderer] 코드 변경됨:', codeChanged);
+        
         onCodeChange(updatedCode);
+        
+        // Canvas → Code 동기화 이벤트 발생 (Monaco Editor 업데이트)
+        window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
         
         // 드롭 후 ghost box를 실제 요소 위치와 정확히 일치하도록 재생성
         // 약간의 지연을 두어 DOM 업데이트가 완료된 후 실행
@@ -645,11 +660,19 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
             width: finalWidth,
             height: finalHeight,
           });
+          
+          // 요소의 AST 위치 정보 가져오기
+          const locData = actualElement?.getAttribute('data-loc');
+          const loc = locData ? JSON.parse(locData) : undefined;
+          
           const updatedCode = updateElementInCode(code, elementId, {
             position: { x: finalLeft, y: finalTop },
             size: { width: finalWidth, height: finalHeight },
-          });
+          }, loc);
           onCodeChange(updatedCode);
+          
+          // Canvas → Code 동기화 이벤트 발생 (Monaco Editor 업데이트)
+          window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
           
           // 리사이즈 후 ghost box를 실제 요소 위치와 정확히 일치하도록 재생성
           setTimeout(() => {
@@ -680,6 +703,9 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     
     // data-element-id 속성 추가 (ghost box 매핑용)
     const dataElementId = elementId;
+    
+    // AST 위치 정보 (코드 수정 시 사용)
+    const dataLoc = node.loc ? JSON.stringify(node.loc) : undefined;
     
     // Tailwind CSS 클래스 파싱
     const tailwindStyles = node.props?.className 
@@ -750,6 +776,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         <span
           key={elementId}
           data-element-id={dataElementId}
+          data-loc={dataLoc}
           style={finalStyle}
           onClick={(e) => {
             e.stopPropagation();
@@ -810,6 +837,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         <ElementTag
           key={elementId}
           data-element-id={dataElementId}
+          data-loc={dataLoc}
           style={finalStyle}
           className={node.props?.className}
           onClick={(e) => {
@@ -839,6 +867,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         <ElementTag
           key={elementId}
           data-element-id={dataElementId}
+          data-loc={dataLoc}
           style={finalStyle}
           className={node.props?.className}
           value={node.props?.value || optionText}
@@ -965,6 +994,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       <ElementTag
         key={elementId}
         data-element-id={dataElementId}
+        data-loc={dataLoc}
         style={finalStyle}
         className={node.props?.className}
         onClick={(e) => {

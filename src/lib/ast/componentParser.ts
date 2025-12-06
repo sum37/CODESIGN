@@ -4,6 +4,11 @@ import * as t from '@babel/types';
 import * as recast from 'recast';
 import { parseImports } from './importResolver';
 
+export interface SourceLocation {
+  start: { line: number; column: number };
+  end: { line: number; column: number };
+}
+
 export interface ComponentNode {
   id?: string;
   type: string;
@@ -16,6 +21,7 @@ export interface ComponentNode {
   expressionName?: string; // 표현식 변수 이름 (예: "name")
   expressionText?: string; // 표현식 전체 텍스트
   componentObjects?: Record<string, Record<string, string>>; // 컴포넌트 내부 객체 정의 (예: colorClasses)
+  loc?: SourceLocation; // AST 위치 정보 (코드 수정 시 사용)
 }
 
 export interface ParseComponentOptions {
@@ -231,6 +237,17 @@ function findReturnJSX(body: t.BlockStatement | null | undefined, importedCompon
 function parseJSXElement(node: t.JSXElement, importedComponents?: Map<string, ComponentNode>, variableMap?: Map<string, any>, localComponents?: Map<string, ComponentNode>): ComponentNode {
   const openingElement = node.openingElement;
   const name = getJSXElementName(openingElement.name);
+  
+  // AST 위치 정보 추출
+  const loc: SourceLocation | undefined = node.loc ? {
+    start: { line: node.loc.start.line, column: node.loc.start.column },
+    end: { line: node.loc.end.line, column: node.loc.end.column },
+  } : undefined;
+  
+  // 디버깅: 주요 요소의 loc 정보 로깅
+  if (['section', 'header', 'div', 'h1', 'h2'].includes(name.toLowerCase())) {
+    console.log(`[componentParser] ${name} 요소 파싱, loc:`, loc);
+  }
   
   // Import된 컴포넌트인지 확인
   const isImportedComponent = importedComponents?.has(name);
@@ -767,6 +784,7 @@ function parseJSXElement(node: t.JSXElement, importedComponents?: Map<string, Co
       id: mergedProps.id as string | undefined,
       type: targetComponent.type, // 컴포넌트의 타입 사용
       isImported: isImportedComponent,
+      loc, // 원본 사용 위치(App.tsx의 <Profile .../>) 유지 - 코드 수정 시 필요
     };
   }
 
@@ -825,6 +843,7 @@ function parseJSXElement(node: t.JSXElement, importedComponents?: Map<string, Co
     props: Object.keys(cleanProps).length > 0 ? cleanProps : undefined,
     children: processedChildren.length > 0 ? processedChildren : undefined,
     isImported: isImportedComponent,
+    loc, // AST 위치 정보 추가
   };
 }
 

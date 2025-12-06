@@ -34,6 +34,23 @@ export function MonacoEditor() {
     }
   }, [selectedFile]);
 
+  // Canvas에서 코드가 변경되면 에디터도 업데이트 (양방향 동기화)
+  useEffect(() => {
+    const handleCodeUpdated = (event: CustomEvent<string>) => {
+      if (selectedFile && (selectedFile.endsWith('.tsx') || selectedFile.endsWith('.jsx'))) {
+        const updatedCode = event.detail;
+        setCode(updatedCode);
+        setSavedCode(updatedCode); // 파일에 이미 저장되었으므로 saved 상태로 설정
+        console.log('Canvas에서 코드 업데이트됨');
+      }
+    };
+
+    window.addEventListener('code-updated' as any, handleCodeUpdated as EventListener);
+    return () => {
+      window.removeEventListener('code-updated' as any, handleCodeUpdated as EventListener);
+    };
+  }, [selectedFile]);
+
   const loadFile = async (filePath: string) => {
     try {
       console.log('파일 로드 시도:', filePath);
