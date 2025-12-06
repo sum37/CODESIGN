@@ -62,7 +62,6 @@ export function ToolbarButtonGroup({
         <ShapeMenu
           showShapeMenu={showShapeMenu}
           onShapeSelect={onShapeSelect}
-          pendingShapeType={pendingShapeType}
         />
       </div>
 

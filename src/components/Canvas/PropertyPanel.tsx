@@ -1,4 +1,3 @@
-import React from 'react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import './PropertyPanel.css';
 

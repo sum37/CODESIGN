@@ -1,8 +1,7 @@
-import React from 'react';
 import { ToolbarButtonGroup } from './ToolbarButtonGroup';
 import { TextEditControls } from './TextEditControls';
 import { ShapeEditControls } from './ShapeEditControls';
-import { useToolbar, ToolbarState } from '../hooks/useToolbar';
+import { useToolbar } from '../hooks/useToolbar';
 import './Toolbar.css';
 
 interface ToolbarProps {

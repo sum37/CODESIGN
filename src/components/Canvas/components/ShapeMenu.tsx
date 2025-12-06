@@ -1,13 +1,11 @@
-import React from 'react';
 import './Toolbar.css';
 
 interface ShapeMenuProps {
   showShapeMenu: boolean;
   onShapeSelect: (shapeType: string) => void;
-  pendingShapeType: string | null;
 }
 
-export function ShapeMenu({ showShapeMenu, onShapeSelect, pendingShapeType }: ShapeMenuProps) {
+export function ShapeMenu({ showShapeMenu, onShapeSelect }: ShapeMenuProps) {
   if (!showShapeMenu) return null;
 
   const handleShapeClick = (shapeType: string) => {

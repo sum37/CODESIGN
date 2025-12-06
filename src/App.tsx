@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { SelectFolder } from './components/SelectFolder/SelectFolder.tsx';
 import { IDE } from './components/IDE/IDE.tsx';
 import { useProjectStore } from './stores/projectStore';
