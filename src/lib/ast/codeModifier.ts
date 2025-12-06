@@ -320,3 +320,110 @@ function updateObjectExpression(node: t.ObjectExpression, updates: Record<string
   });
 }
 
+/**
+ * 텍스트 내용을 코드에 반영
+ * @param code - 원본 코드
+ * @param loc - 텍스트가 포함된 요소의 AST 위치 정보
+ * @param newText - 새로운 텍스트 내용
+ */
+export function updateTextInCode(
+  code: string,
+  loc: SourceLocation,
+  newText: string
+): string {
+  console.log('[codeModifier] updateTextInCode 호출:', { loc, newText });
+  
+  const lines = code.split('\n');
+  const targetLine = loc.start.line - 1; // 0-indexed
+  const endLine = loc.end.line - 1;
+  
+  if (targetLine < 0 || targetLine >= lines.length) {
+    console.warn('[codeModifier] 유효하지 않은 라인 번호:', loc.start.line);
+    return code;
+  }
+  
+  // 요소의 시작 문자 인덱스 계산
+  let startCharIndex = 0;
+  for (let i = 0; i < targetLine; i++) {
+    startCharIndex += lines[i].length + 1;
+  }
+  startCharIndex += loc.start.column;
+  
+  // 요소의 끝 문자 인덱스 계산
+  let endCharIndex = 0;
+  for (let i = 0; i < endLine; i++) {
+    endCharIndex += lines[i].length + 1;
+  }
+  endCharIndex += loc.end.column;
+  
+  // 요소 전체 내용 추출
+  const elementContent = code.substring(startCharIndex, endCharIndex);
+  console.log('[codeModifier] 요소 내용:', elementContent.substring(0, 100));
+  
+  // 여는 태그의 끝 (>) 찾기
+  let openingTagEnd = -1;
+  let braceCount = 0;
+  let inString = false;
+  let stringChar = '';
+  
+  for (let i = 0; i < elementContent.length; i++) {
+    const char = elementContent[i];
+    
+    // 문자열 내부 처리
+    if ((char === '"' || char === "'" || char === '`') && elementContent[i - 1] !== '\\') {
+      if (!inString) {
+        inString = true;
+        stringChar = char;
+      } else if (char === stringChar) {
+        inString = false;
+      }
+      continue;
+    }
+    
+    if (inString) continue;
+    
+    // 중괄호 카운트 (JSX 표현식 내부 처리)
+    if (char === '{') braceCount++;
+    else if (char === '}') braceCount--;
+    
+    // 여는 태그 끝 찾기
+    if (char === '>' && braceCount === 0 && elementContent[i - 1] !== '=') {
+      openingTagEnd = i;
+      break;
+    }
+  }
+  
+  if (openingTagEnd === -1) {
+    console.warn('[codeModifier] 여는 태그 끝을 찾을 수 없음');
+    return code;
+  }
+  
+  // 닫는 태그 찾기
+  const closingTagMatch = elementContent.match(/<\/\w+>\s*$/);
+  if (!closingTagMatch) {
+    console.warn('[codeModifier] 닫는 태그를 찾을 수 없음');
+    return code;
+  }
+  
+  const closingTagStart = elementContent.lastIndexOf(closingTagMatch[0]);
+  
+  // 새로운 요소 내용 생성
+  const openingTag = elementContent.substring(0, openingTagEnd + 1);
+  const closingTag = elementContent.substring(closingTagStart);
+  
+  // 텍스트에 특수 문자가 있으면 이스케이프
+  const escapedText = newText
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  
+  const newElementContent = openingTag + escapedText + closingTag;
+  
+  console.log('[codeModifier] 새 요소 내용:', newElementContent.substring(0, 100));
+  
+  // 코드 교체
+  const result = code.substring(0, startCharIndex) + newElementContent + code.substring(endCharIndex);
+  
+  return result;
+}
+

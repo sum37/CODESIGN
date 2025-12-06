@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { parseComponent, ComponentNode } from '../../lib/ast/componentParser';
-import { updateElementInCode } from '../../lib/ast/codeModifier';
+import { updateElementInCode, updateTextInCode } from '../../lib/ast/codeModifier';
 import { parseTailwindClasses } from '../../lib/utils/tailwindParser';
 import { parseImports, loadImportedComponent } from '../../lib/ast/importResolver';
 import { useCanvasStore } from '../../stores/canvasStore';
@@ -21,7 +21,65 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
   const elementIdMapRef = useRef<Map<ComponentNode, string>>(new Map());
   const { selectedFile } = useProjectStore();
   const { selectedElementId, setSelectedElementId, updateElementPosition } = useCanvasStore();
+  const [editingElementId, setEditingElementId] = useState<string | null>(null);
+  const editingRef = useRef<HTMLElement | null>(null);
   
+  // 텍스트 편집 완료 핸들러
+  const handleTextEditComplete = useCallback((
+    elementId: string,
+    newText: string,
+    loc: { start: { line: number; column: number }; end: { line: number; column: number } } | undefined
+  ) => {
+    console.log('[CanvasRenderer] 텍스트 편집 완료:', { elementId, newText, loc });
+    
+    if (!loc) {
+      console.warn('[CanvasRenderer] loc 정보가 없어서 코드 업데이트 불가');
+      return;
+    }
+    
+    const updatedCode = updateTextInCode(code, loc, newText);
+    
+    if (updatedCode !== code) {
+      onCodeChange(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+    }
+    
+    setEditingElementId(null);
+    editingRef.current = null;
+  }, [code, onCodeChange]);
+
+  // 더블클릭으로 텍스트 편집 시작
+  const handleTextDoubleClick = useCallback((
+    e: React.MouseEvent,
+    elementId: string,
+    element: HTMLElement
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    console.log('[CanvasRenderer] 텍스트 더블클릭:', elementId);
+    
+    setEditingElementId(elementId);
+    editingRef.current = element;
+    
+    // contentEditable 설정
+    element.contentEditable = 'true';
+    element.focus();
+    
+    // 전체 텍스트 선택
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    
+    // 스타일 변경 (편집 중임을 표시)
+    element.style.outline = '2px solid #4CAF50';
+    element.style.outlineOffset = '2px';
+    element.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+    element.style.cursor = 'text';
+  }, []);
+
   // 컴포넌트 트리 경로 기반 일관된 ID 생성
   const generateElementId = (node: ComponentNode, depth: number, path: number[] = []): string => {
     // 이미 생성된 ID가 있으면 재사용
@@ -264,6 +322,124 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     return { left, top };
   };
 
+  // 텍스트 편집 가능한 태그인지 확인
+  const textEditableTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'button', 'a', 'label', 'li'];
+  
+  // Ghost Box에서 텍스트 편집 시작
+  const startTextEditFromGhostBox = useCallback((elementId: string) => {
+    const root = reactRootRef.current;
+    if (!root) return;
+    
+    const actualElement = root.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
+    if (!actualElement) return;
+    
+    const tagName = actualElement.tagName.toLowerCase();
+    
+    // 텍스트 편집 가능한 태그인지 확인
+    if (!textEditableTags.includes(tagName)) {
+      console.log('[CanvasRenderer] 텍스트 편집 불가능한 태그:', tagName);
+      return;
+    }
+    
+    // loc 정보 가져오기 (자신 또는 부모 요소에서)
+    let locData = actualElement.getAttribute('data-loc');
+    let locElement = actualElement;
+    
+    // 텍스트 노드인 경우 (span으로 렌더링됨) 부모 요소의 loc 사용
+    if (!locData || tagName === 'span') {
+      const parent = actualElement.parentElement;
+      if (parent) {
+        const parentLoc = parent.getAttribute('data-loc');
+        if (parentLoc) {
+          locData = parentLoc;
+          locElement = parent;
+        }
+      }
+    }
+    
+    console.log('[CanvasRenderer] Ghost Box에서 텍스트 편집 시작:', elementId, 'loc:', locData);
+    
+    // ghost box 숨기기
+    const overlay = overlayRef.current;
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
+    
+    setEditingElementId(elementId);
+    editingRef.current = actualElement;
+    
+    // contentEditable 설정
+    actualElement.contentEditable = 'true';
+    actualElement.focus();
+    
+    // 전체 텍스트 선택
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(actualElement);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    
+    // 스타일 변경 (편집 중임을 표시)
+    actualElement.style.outline = '2px solid #4CAF50';
+    actualElement.style.outlineOffset = '2px';
+    actualElement.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+    actualElement.style.cursor = 'text';
+    
+    // blur 이벤트 핸들러 추가
+    const handleBlur = () => {
+      const loc = locData ? JSON.parse(locData) : undefined;
+      // locElement (부모)의 전체 텍스트 내용을 가져옴
+      const newText = locElement === actualElement 
+        ? actualElement.textContent || ''
+        : actualElement.textContent || '';
+      
+      console.log('[CanvasRenderer] 텍스트 편집 blur:', { newText, loc });
+      
+      actualElement.contentEditable = 'false';
+      actualElement.style.outline = '';
+      actualElement.style.outlineOffset = '';
+      actualElement.style.backgroundColor = '';
+      actualElement.style.cursor = 'pointer';
+      
+      // ghost box 다시 표시
+      if (overlay) {
+        overlay.style.display = '';
+      }
+      
+      if (loc) {
+        // 부모 요소의 loc을 사용하여 텍스트 업데이트
+        handleTextEditComplete(elementId, newText, loc);
+      } else {
+        console.warn('[CanvasRenderer] loc 정보가 없어서 코드 업데이트 불가');
+      }
+      
+      actualElement.removeEventListener('blur', handleBlur);
+      actualElement.removeEventListener('keydown', handleKeyDown);
+      
+      // ghost box 재생성
+      setTimeout(() => {
+        if (selectedElementId === elementId) {
+          createGhostBoxForElement(actualElement, elementId);
+        }
+      }, 50);
+    };
+    
+    // keydown 이벤트 핸들러
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        actualElement.blur();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        actualElement.blur();
+        setEditingElementId(null);
+      }
+    };
+    
+    actualElement.addEventListener('blur', handleBlur);
+    actualElement.addEventListener('keydown', handleKeyDown);
+  }, [handleTextEditComplete, selectedElementId]);
+
   // Ghost Box 생성
   const createGhostBoxForElement = (el: HTMLElement, elementId: string) => {
     const root = reactRootRef.current;
@@ -304,6 +480,13 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       handle.className = `resize-handle resize-handle-${dir}`;
       handle.setAttribute('data-direction', dir);
       box.appendChild(handle);
+    });
+    
+    // 더블클릭으로 텍스트 편집 시작
+    box.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      startTextEditFromGhostBox(elementId);
     });
 
     overlay.appendChild(box);
@@ -822,26 +1005,63 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         (typeof node.props?.children === 'string' ? node.props.children : '') ||
         '';
       
-      // JSX 표현식인 경우 props에서 값을 찾기
-      if (node.isExpression && node.expressionName) {
-        // 부모 컴포넌트의 props에서 값을 찾기
-        // 현재는 간단히 표현식 텍스트를 표시
+      // JSX 표현식인 경우 편집 불가
+      const isExpression = node.isExpression && node.expressionName;
+      if (isExpression) {
         textContent = node.text || `{${node.expressionName}}`;
       }
       
       if (!textContent) return null;
+      
+      const isEditing = editingElementId === elementId;
       
       return (
         <span
           key={elementId}
           data-element-id={dataElementId}
           data-loc={dataLoc}
-          style={finalStyle}
+          style={{
+            ...finalStyle,
+            cursor: isEditing ? 'text' : 'pointer',
+            minWidth: '20px',
+            display: 'inline-block',
+          }}
           onClick={(e) => {
             e.stopPropagation();
-            console.log('요소 클릭:', elementId, dataElementId);
-            setSelectedElementId(elementId);
+            if (!isEditing) {
+              setSelectedElementId(elementId);
+            }
           }}
+          onDoubleClick={(e) => {
+            if (isExpression) return; // 표현식은 편집 불가
+            handleTextDoubleClick(e, elementId, e.currentTarget);
+          }}
+          onBlur={(e) => {
+            if (isEditing && node.loc) {
+              const newText = e.currentTarget.textContent || '';
+              e.currentTarget.contentEditable = 'false';
+              e.currentTarget.style.outline = isSelected ? '2px solid #007acc' : 'none';
+              e.currentTarget.style.outlineOffset = '-2px';
+              e.currentTarget.style.backgroundColor = '';
+              e.currentTarget.style.cursor = 'pointer';
+              handleTextEditComplete(elementId, newText, node.loc);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (isEditing) {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                e.currentTarget.blur();
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                // 원래 텍스트로 복원
+                e.currentTarget.textContent = textContent;
+                e.currentTarget.blur();
+                setEditingElementId(null);
+              }
+            }
+          }}
+          suppressContentEditableWarning={true}
         >
           {textContent}
         </span>
@@ -1049,20 +1269,71 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     // 편집 가능한 요소인지 확인 (header, section 등)
     const isEditable = editableTags.includes(node.type.toLowerCase());
     
+    // 텍스트 편집 가능한 요소인지 확인 (순수 텍스트만 포함하는 경우)
+    const textEditableTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'button', 'a', 'label', 'li'];
+    const isTextEditable = textEditableTags.includes(node.type.toLowerCase());
+    
+    // 자식이 순수 텍스트인지 확인
+    const hasOnlyTextChildren = node.children?.every(child => 
+      child.type === 'text' && !child.isExpression
+    ) ?? false;
+    
+    const canEditText = isTextEditable && hasOnlyTextChildren && node.children && node.children.length > 0;
+    const isEditing = editingElementId === elementId;
+    
     return (
       <ElementTag
         key={elementId}
         data-element-id={dataElementId}
         data-loc={dataLoc}
-        style={finalStyle}
+        style={{
+          ...finalStyle,
+          cursor: isEditing ? 'text' : 'pointer',
+        }}
         className={node.props?.className}
         onClick={(e) => {
           e.stopPropagation();
-          console.log('요소 클릭:', elementId, '타입:', node.type, '편집 가능:', isEditable);
-          if (isEditable) {
+          if (!isEditing && isEditable) {
             setSelectedElementId(elementId);
           }
         }}
+        onDoubleClick={(e) => {
+          if (canEditText && node.loc) {
+            e.stopPropagation();
+            handleTextDoubleClick(e, elementId, e.currentTarget as HTMLElement);
+          }
+        }}
+        onBlur={(e) => {
+          if (isEditing && node.loc) {
+            const target = e.currentTarget as HTMLElement;
+            const newText = target.textContent || '';
+            target.contentEditable = 'false';
+            target.style.outline = isSelected ? '2px solid #007acc' : 'none';
+            target.style.outlineOffset = '-2px';
+            target.style.backgroundColor = '';
+            target.style.cursor = 'pointer';
+            handleTextEditComplete(elementId, newText, node.loc);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (isEditing) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              (e.currentTarget as HTMLElement).blur();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              // 원래 텍스트로 복원
+              const originalText = node.children
+                ?.filter(child => child.type === 'text')
+                .map(child => child.text || '')
+                .join('') || '';
+              e.currentTarget.textContent = originalText;
+              (e.currentTarget as HTMLElement).blur();
+              setEditingElementId(null);
+            }
+          }
+        }}
+        suppressContentEditableWarning={true}
         {...cleanProps}
       >
         {renderChildren()}
