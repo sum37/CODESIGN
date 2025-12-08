@@ -9,16 +9,28 @@ interface ToolbarProps {
   onAddText: () => void;
   onShapeSelect: (shapeType: string) => void;
   onImageSelect: (file: File) => void;
+  onFontWeightChange?: (fontWeight: 'normal' | 'bold') => void;
 }
 
-export function Toolbar({ onAddText, onShapeSelect, onImageSelect }: ToolbarProps) {
+export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontWeightChange }: ToolbarProps) {
   const toolbar = useToolbar();
-  const { drawingMode } = useCanvasStore();
+  const { drawingMode, selectedElementId } = useCanvasStore();
 
   const handleShapeSelect = (shapeType: string) => {
     toolbar.setShowShapeMenu(false);
     console.log(`${shapeType} 그리기 모드 활성화`);
     onShapeSelect(shapeType);
+  };
+
+  // fontWeight 토글 핸들러 - 선택된 요소가 있으면 코드 업데이트
+  const handleFontWeightToggle = () => {
+    const newWeight = toolbar.fontWeight === 'bold' ? 'normal' : 'bold';
+    toolbar.setFontWeight(newWeight);
+    
+    // 선택된 요소가 있으면 실제 코드에 반영
+    if (selectedElementId && onFontWeightChange) {
+      onFontWeightChange(newWeight);
+    }
   };
 
   return (
@@ -44,7 +56,7 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect }: ToolbarProp
         textColor={toolbar.textColor}
         onTextColorChange={toolbar.setTextColor}
         fontWeight={toolbar.fontWeight}
-        onFontWeightToggle={() => toolbar.setFontWeight(toolbar.fontWeight === 'bold' ? 'normal' : 'bold')}
+        onFontWeightToggle={handleFontWeightToggle}
         fontStyle={toolbar.fontStyle}
         onFontStyleToggle={() => toolbar.setFontStyle(toolbar.fontStyle === 'italic' ? 'normal' : 'italic')}
         textAlign={toolbar.textAlign}

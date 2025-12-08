@@ -4,7 +4,18 @@ import { parseComponent, ComponentNode } from '../../lib/ast/componentParser';
 import { updateElementInCode, updateTextInCode, insertShapeInCode, insertTextBoxInCode, deleteElementFromCode } from '../../lib/ast/codeModifier';
 import { parseTailwindClasses } from '../../lib/utils/tailwindParser';
 import { parseImports, loadImportedComponent } from '../../lib/ast/importResolver';
-import { useCanvasStore, DrawingModeType } from '../../stores/canvasStore';
+import { useCanvasStore, DrawingModeType, SourceLocation } from '../../stores/canvasStore';
+
+// 안전한 JSON 파싱 헬퍼 함수
+const safeParseLocJson = (jsonStr: string | null | undefined): SourceLocation | null => {
+  if (!jsonStr) return null;
+  try {
+    return JSON.parse(jsonStr) as SourceLocation;
+  } catch (e) {
+    console.warn('[CanvasRenderer] loc JSON 파싱 실패:', jsonStr);
+    return null;
+  }
+};
 import { useProjectStore } from '../../stores/projectStore';
 import './CanvasRenderer.css';
 
@@ -24,7 +35,8 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
   const { selectedFile } = useProjectStore();
   const { 
     selectedElementId, 
-    setSelectedElementId, 
+    setSelectedElementId,
+    setSelectedElementLoc,
     updateElementPosition,
     drawingMode,
     setDrawingMode,
@@ -365,6 +377,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         onCodeChange(updatedCode);
         window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
         setSelectedElementId(null);
+        setSelectedElementLoc(null);
         setContextMenu({ visible: false, x: 0, y: 0, elementId: null });
         console.log('[CanvasRenderer] 요소 삭제 완료');
       } else {
@@ -735,6 +748,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
 
       // 외부를 클릭한 경우 선택 해제
       setSelectedElementId(null);
+      setSelectedElementLoc(null);
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -1609,14 +1623,17 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
                 const parentEl = (e.currentTarget as HTMLElement).closest('[data-loc]');
                 if (parentEl) {
                   const parentId = parentEl.getAttribute('data-element-id');
+                  const parentLoc = parentEl.getAttribute('data-loc');
                   if (parentId) {
                     console.log('[CanvasRenderer] 텍스트 노드 클릭 → 부모 요소 선택:', parentId);
                     setSelectedElementId(parentId);
+                    setSelectedElementLoc(safeParseLocJson(parentLoc));
                     return;
                   }
                 }
               }
               setSelectedElementId(elementId);
+              setSelectedElementLoc(safeParseLocJson(dataLoc));
             }
           }}
           onDoubleClick={(e) => {
@@ -1711,6 +1728,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
             console.log('Void 요소 클릭:', elementId, '타입:', node.type, '편집 가능:', isEditable);
             if (isEditable) {
               setSelectedElementId(elementId);
+              setSelectedElementLoc(safeParseLocJson(dataLoc));
             }
           }}
           {...cleanProps}
@@ -1743,6 +1761,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
             console.log('Option 요소 클릭:', elementId, '타입:', node.type, '편집 가능:', isEditable);
             if (isEditable) {
               setSelectedElementId(elementId);
+              setSelectedElementLoc(safeParseLocJson(dataLoc));
             }
           }}
         >
@@ -1893,6 +1912,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
           e.stopPropagation();
           if (!isEditing && isEditable) {
             setSelectedElementId(elementId);
+            setSelectedElementLoc(safeParseLocJson(dataLoc));
           }
         }}
         onDoubleClick={(e) => {

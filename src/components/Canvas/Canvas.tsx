@@ -5,6 +5,7 @@ import { CanvasRenderer } from './CanvasRenderer';
 import { useCanvasSync } from '../../hooks/useCanvasSync';
 import { Toolbar } from './components/Toolbar';
 import { useCanvasStore, DrawingModeType } from '../../stores/canvasStore';
+import { updateElementInCode } from '../../lib/ast/codeModifier';
 import './Canvas.css';
 
 export function Canvas() {
@@ -126,7 +127,7 @@ export function Canvas() {
   };
   
   // 도형 그리기 모드 상태
-  const { drawingMode, setDrawingMode } = useCanvasStore();
+  const { drawingMode, setDrawingMode, selectedElementId, selectedElementLoc } = useCanvasStore();
   
   // 도형 선택 핸들러 - 그리기 모드 활성화
   const handleShapeSelect = (shapeType: string) => {
@@ -143,6 +144,31 @@ export function Canvas() {
       console.log('이미지 추가:', imageUrl);
     };
     reader.readAsDataURL(file);
+  };
+
+  // fontWeight 변경 핸들러
+  const handleFontWeightChange = (fontWeight: 'normal' | 'bold') => {
+    console.log('[Canvas] fontWeight 변경:', fontWeight, '선택된 요소:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] 선택된 요소 또는 loc 정보가 없음');
+      return;
+    }
+    
+    // 코드에서 해당 요소의 fontWeight 스타일 업데이트
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { style: { fontWeight } },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] fontWeight 변경 완료');
+    }
   };
 
   return (
@@ -185,6 +211,7 @@ export function Canvas() {
         onAddText={handleAddText}
         onShapeSelect={handleShapeSelect}
         onImageSelect={handleImageSelect}
+        onFontWeightChange={handleFontWeightChange}
       />
       <div 
         className="canvas-content-wrapper"

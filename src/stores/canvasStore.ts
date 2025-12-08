@@ -13,9 +13,17 @@ export type ShapeType = 'rectangle' | 'roundedRectangle' | 'parallelogram' | 'ci
 // 그리기 모드 타입 (도형 또는 텍스트박스)
 export type DrawingModeType = ShapeType | 'textbox';
 
+// 선택된 요소의 AST 위치 정보
+export interface SourceLocation {
+  start: { line: number; column: number };
+  end: { line: number; column: number };
+}
+
 interface CanvasState {
   selectedElementId: string | null;
   setSelectedElementId: (id: string | null) => void;
+  selectedElementLoc: SourceLocation | null;
+  setSelectedElementLoc: (loc: SourceLocation | null) => void;
   elementPositions: Record<string, ElementPosition>;
   updateElementPosition: (id: string, position: Partial<ElementPosition>) => void;
   
@@ -33,6 +41,8 @@ interface CanvasState {
 export const useCanvasStore = create<CanvasState>((set) => ({
   selectedElementId: null,
   setSelectedElementId: (id) => set({ selectedElementId: id }),
+  selectedElementLoc: null,
+  setSelectedElementLoc: (loc) => set({ selectedElementLoc: loc }),
   elementPositions: {},
   updateElementPosition: (id, position) =>
     set((state) => ({

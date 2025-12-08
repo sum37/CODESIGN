@@ -144,6 +144,12 @@ function updateCodeByLocation(
     styleUpdates.width = `${Math.round(updates.size.width)}px`;
     styleUpdates.height = `${Math.round(updates.size.height)}px`;
   }
+  // 추가 스타일 속성 (fontWeight, fontStyle, color 등)
+  if (updates.style) {
+    Object.entries(updates.style).forEach(([key, value]) => {
+      styleUpdates[key] = String(value);
+    });
+  }
   
   // 코드에서 정확한 문자 인덱스 계산
   let startCharIndex = 0;
@@ -667,8 +673,8 @@ export function insertTextBoxInCode(
   const { x, y, width, height } = bounds;
   const textBoxId = `textbox-${Date.now()}`;
   
-  // 텍스트 박스 JSX 생성 (심플한 텍스트 스타일)
-  const textBoxJSX = `<span id="${textBoxId}" style={{position: "absolute", left: "${x}px", top: "${y}px", fontSize: "16px", color: "#333333", zIndex: 100, cursor: "text"}}>텍스트를 입력하세요</span>`;
+  // 텍스트 박스 JSX 생성 (p 태그 사용)
+  const textBoxJSX = `<p id="${textBoxId}" style={{position: "absolute", left: "${x}px", top: "${y}px", fontSize: "16px", color: "#333333", zIndex: 100, cursor: "text", margin: 0}}>텍스트를 입력하세요</p>`;
   
   // return 문 찾기 (insertShapeInCode와 동일한 로직)
   let insertIndex = -1;
