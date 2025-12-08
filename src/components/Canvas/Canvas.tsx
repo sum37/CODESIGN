@@ -196,6 +196,31 @@ export function Canvas() {
     }
   };
 
+  // textColor 변경 핸들러
+  const handleTextColorChange = (color: string) => {
+    console.log('[Canvas] textColor 변경:', color, '선택된 요소:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] 선택된 요소 또는 loc 정보가 없음');
+      return;
+    }
+    
+    // 코드에서 해당 요소의 color 스타일 업데이트
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { style: { color } },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] textColor 변경 완료');
+    }
+  };
+
   return (
     <div className="canvas-container">
       <div className="canvas-header">
@@ -238,6 +263,7 @@ export function Canvas() {
         onImageSelect={handleImageSelect}
         onFontWeightChange={handleFontWeightChange}
         onFontStyleChange={handleFontStyleChange}
+        onTextColorChange={handleTextColorChange}
       />
       <div 
         className="canvas-content-wrapper"

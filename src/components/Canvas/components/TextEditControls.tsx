@@ -152,7 +152,20 @@ export function TextEditControls({
               <input
                 type="color"
                 value={textColor}
-                onChange={(e) => onTextColorChange(e.target.value)}
+                onChange={(e) => {
+                  const newColor = e.target.value;
+                  // 편집 모드인지 확인
+                  const selection = window.getSelection();
+                  const activeElement = document.activeElement as HTMLElement;
+                  
+                  if (selection && !selection.isCollapsed && activeElement?.isContentEditable) {
+                    // 편집 모드: 선택된 텍스트에 색상 적용
+                    document.execCommand('foreColor', false, newColor);
+                    console.log('[TextEditControls] execCommand foreColor 실행:', newColor);
+                  }
+                  // 항상 toolbar 상태 업데이트 및 선택된 요소에 반영
+                  onTextColorChange(newColor);
+                }}
                 onClick={(e) => e.stopPropagation()}
                 style={{ 
                   height: '128px', 

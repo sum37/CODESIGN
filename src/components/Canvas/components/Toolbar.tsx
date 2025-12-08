@@ -11,9 +11,10 @@ interface ToolbarProps {
   onImageSelect: (file: File) => void;
   onFontWeightChange?: (fontWeight: 'normal' | 'bold') => void;
   onFontStyleChange?: (fontStyle: 'normal' | 'italic') => void;
+  onTextColorChange?: (color: string) => void;
 }
 
-export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontWeightChange, onFontStyleChange }: ToolbarProps) {
+export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontWeightChange, onFontStyleChange, onTextColorChange }: ToolbarProps) {
   const toolbar = useToolbar();
   const { drawingMode, selectedElementId } = useCanvasStore();
 
@@ -45,6 +46,16 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontWeightC
     }
   };
 
+  // textColor 변경 핸들러 - 선택된 요소가 있으면 코드 업데이트
+  const handleTextColorChange = (color: string) => {
+    toolbar.setTextColor(color);
+    
+    // 선택된 요소가 있으면 실제 코드에 반영
+    if (selectedElementId && onTextColorChange) {
+      onTextColorChange(color);
+    }
+  };
+
   return (
     <div className="canvas-toolbar">
       <ToolbarButtonGroup
@@ -66,7 +77,7 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontWeightC
         fontSize={toolbar.fontSize}
         onFontSizeChange={toolbar.setFontSize}
         textColor={toolbar.textColor}
-        onTextColorChange={toolbar.setTextColor}
+        onTextColorChange={handleTextColorChange}
         fontWeight={toolbar.fontWeight}
         onFontWeightToggle={handleFontWeightToggle}
         fontStyle={toolbar.fontStyle}
