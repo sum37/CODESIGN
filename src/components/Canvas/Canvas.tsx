@@ -4,7 +4,7 @@ import { readFile } from '../../lib/fileSystem/fileSystem';
 import { CanvasRenderer } from './CanvasRenderer';
 import { useCanvasSync } from '../../hooks/useCanvasSync';
 import { Toolbar } from './components/Toolbar';
-import { useCanvasStore, ShapeType } from '../../stores/canvasStore';
+import { useCanvasStore, DrawingModeType } from '../../stores/canvasStore';
 import './Canvas.css';
 
 export function Canvas() {
@@ -119,10 +119,10 @@ export function Canvas() {
     setZoomLevel(1);
   };
   
-  // 텍스트 추가 핸들러
+  // 텍스트 박스 추가 핸들러 - 그리기 모드 활성화
   const handleAddText = () => {
-    // TODO: 텍스트 추가 로직 구현
-    console.log('텍스트 추가');
+    console.log('텍스트 박스 그리기 모드 활성화');
+    setDrawingMode('textbox');
   };
   
   // 도형 그리기 모드 상태
@@ -131,7 +131,7 @@ export function Canvas() {
   // 도형 선택 핸들러 - 그리기 모드 활성화
   const handleShapeSelect = (shapeType: string) => {
     console.log('도형 선택, 그리기 모드 활성화:', shapeType);
-    setDrawingMode(shapeType as ShapeType);
+    setDrawingMode(shapeType as DrawingModeType);
   };
   
   // 이미지 선택 핸들러

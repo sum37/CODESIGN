@@ -654,6 +654,88 @@ function generateShapeJSX(
 }
 
 /**
+ * 텍스트 박스를 코드에 삽입
+ * @param code - 원본 코드
+ * @param bounds - 텍스트 박스의 위치와 크기
+ */
+export function insertTextBoxInCode(
+  code: string,
+  bounds: { x: number; y: number; width: number; height: number }
+): string {
+  console.log('[codeModifier] insertTextBoxInCode 호출:', { bounds });
+  
+  const { x, y, width, height } = bounds;
+  const textBoxId = `textbox-${Date.now()}`;
+  
+  // 텍스트 박스 JSX 생성 (심플한 텍스트 스타일)
+  const textBoxJSX = `<span id="${textBoxId}" style={{position: "absolute", left: "${x}px", top: "${y}px", fontSize: "16px", color: "#333333", zIndex: 100, cursor: "text"}}>텍스트를 입력하세요</span>`;
+  
+  // return 문 찾기 (insertShapeInCode와 동일한 로직)
+  let insertIndex = -1;
+  let baseIndent = '    ';
+  
+  // 방법 1: return 문 찾기
+  const returnRegex = /return\s*\(/g;
+  let lastReturnMatch: RegExpExecArray | null = null;
+  let match: RegExpExecArray | null;
+  
+  while ((match = returnRegex.exec(code)) !== null) {
+    lastReturnMatch = match;
+  }
+  
+  if (lastReturnMatch) {
+    const afterReturn = code.substring(lastReturnMatch.index + lastReturnMatch[0].length);
+    const tagEndPos = findOpeningTagEnd(afterReturn);
+    
+    if (tagEndPos !== -1) {
+      insertIndex = lastReturnMatch.index + lastReturnMatch[0].length + tagEndPos + 1;
+      
+      const linesBefore = code.substring(0, lastReturnMatch.index).split('\n');
+      const lastLine = linesBefore[linesBefore.length - 1];
+      const indentMatch = lastLine.match(/^([ \t]*)/);
+      baseIndent = indentMatch ? indentMatch[1] + '    ' : '      ';
+    }
+  }
+  
+  // 방법 2: return < 패턴
+  if (insertIndex === -1) {
+    const returnDirectRegex = /return\s+</g;
+    let lastDirectMatch: RegExpExecArray | null = null;
+    
+    while ((match = returnDirectRegex.exec(code)) !== null) {
+      lastDirectMatch = match;
+    }
+    
+    if (lastDirectMatch) {
+      const startPos = lastDirectMatch.index + lastDirectMatch[0].length - 1;
+      const afterReturn = code.substring(startPos);
+      const tagEndPos = findOpeningTagEnd(afterReturn);
+      
+      if (tagEndPos !== -1) {
+        insertIndex = startPos + tagEndPos + 1;
+        
+        const linesBefore = code.substring(0, lastDirectMatch.index).split('\n');
+        const lastLine = linesBefore[linesBefore.length - 1];
+        const indentMatch = lastLine.match(/^([ \t]*)/);
+        baseIndent = indentMatch ? indentMatch[1] + '    ' : '      ';
+      }
+    }
+  }
+  
+  if (insertIndex === -1) {
+    console.warn('[codeModifier] JSX 삽입 위치를 찾을 수 없음');
+    return code;
+  }
+  
+  const indentedTextBoxJSX = '\n' + baseIndent + textBoxJSX;
+  const result = code.substring(0, insertIndex) + indentedTextBoxJSX + code.substring(insertIndex);
+  
+  console.log('[codeModifier] 텍스트 박스 삽입 완료, 코드 길이 변화:', code.length, '->', result.length);
+  
+  return result;
+}
+
+/**
  * 텍스트 내용을 코드에 반영
  * @param code - 원본 코드
  * @param loc - 텍스트가 포함된 요소의 AST 위치 정보

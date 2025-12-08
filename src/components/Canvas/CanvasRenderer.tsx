@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { parseComponent, ComponentNode } from '../../lib/ast/componentParser';
-import { updateElementInCode, updateTextInCode, insertShapeInCode, deleteElementFromCode } from '../../lib/ast/codeModifier';
+import { updateElementInCode, updateTextInCode, insertShapeInCode, insertTextBoxInCode, deleteElementFromCode } from '../../lib/ast/codeModifier';
 import { parseTailwindClasses } from '../../lib/utils/tailwindParser';
 import { parseImports, loadImportedComponent } from '../../lib/ast/importResolver';
-import { useCanvasStore, ShapeType } from '../../stores/canvasStore';
+import { useCanvasStore, DrawingModeType } from '../../stores/canvasStore';
 import { useProjectStore } from '../../stores/projectStore';
 import './CanvasRenderer.css';
 
@@ -143,7 +143,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
   codeRef.current = code;
   
   const handleDrawingMouseUp = useCallback((e: React.MouseEvent) => {
-    if (!isDrawing || !drawingMode || !drawStartPosition || !drawCurrentPosition) {
+    if (!isDrawing || !drawingMode || !drawStartPosition) {
       setIsDrawing(false);
       return;
     }
@@ -151,19 +151,39 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     e.preventDefault();
     e.stopPropagation();
     
-    // 시작점과 끝점으로 도형의 위치와 크기 계산 (react-root 기준)
-    let x = Math.min(drawStartPosition.x, drawCurrentPosition.x);
-    let y = Math.min(drawStartPosition.y, drawCurrentPosition.y);
-    const width = Math.abs(drawCurrentPosition.x - drawStartPosition.x);
-    const height = Math.abs(drawCurrentPosition.y - drawStartPosition.y);
+    // 텍스트 박스는 클릭으로 생성 (드래그 불필요)
+    const isTextbox = drawingMode === 'textbox';
     
-    // 최소 크기 체크 (너무 작으면 무시)
-    if (width < 10 || height < 10) {
-      console.log('[CanvasRenderer] 도형이 너무 작음, 무시');
-      setIsDrawing(false);
-      setDrawStartPosition(null);
-      setDrawCurrentPosition(null);
-      return;
+    let x: number;
+    let y: number;
+    let width: number;
+    let height: number;
+    
+    if (isTextbox) {
+      // 텍스트 박스: 클릭 위치에 기본 크기로 생성
+      x = drawStartPosition.x;
+      y = drawStartPosition.y;
+      width = 200;
+      height = 32;
+    } else {
+      // 도형: 드래그로 크기 지정
+      if (!drawCurrentPosition) {
+        setIsDrawing(false);
+        return;
+      }
+      x = Math.min(drawStartPosition.x, drawCurrentPosition.x);
+      y = Math.min(drawStartPosition.y, drawCurrentPosition.y);
+      width = Math.abs(drawCurrentPosition.x - drawStartPosition.x);
+      height = Math.abs(drawCurrentPosition.y - drawStartPosition.y);
+      
+      // 도형 최소 크기 체크
+      if (width < 10 || height < 10) {
+        console.log('[CanvasRenderer] 도형이 너무 작음, 무시');
+        setIsDrawing(false);
+        setDrawStartPosition(null);
+        setDrawCurrentPosition(null);
+        return;
+      }
     }
     
     // App 루트 요소의 오프셋 계산 (도형은 App 루트 내부에 삽입됨)
@@ -185,21 +205,31 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       }
     }
     
-    console.log('[CanvasRenderer] 도형 생성:', { 
-      shapeType: drawingMode, 
+    console.log('[CanvasRenderer] 요소 생성:', { 
+      type: drawingMode, 
       x, y, width, height 
     });
     
     // 최신 code 값 사용
     const currentCode = codeRef.current;
     
-    // 코드에 새 도형 삽입
-    const updatedCode = insertShapeInCode(currentCode, drawingMode, {
-      x: Math.round(x),
-      y: Math.round(y),
-      width: Math.round(width),
-      height: Math.round(height),
-    });
+    // 코드에 새 요소 삽입 (텍스트 박스 또는 도형)
+    let updatedCode: string;
+    if (drawingMode === 'textbox') {
+      updatedCode = insertTextBoxInCode(currentCode, {
+        x: Math.round(x),
+        y: Math.round(y),
+        width: Math.round(width),
+        height: Math.round(height),
+      });
+    } else {
+      updatedCode = insertShapeInCode(currentCode, drawingMode, {
+        x: Math.round(x),
+        y: Math.round(y),
+        width: Math.round(width),
+        height: Math.round(height),
+      });
+    }
     
     console.log('[CanvasRenderer] 코드 변경 여부:', updatedCode !== currentCode);
     console.log('[CanvasRenderer] 원본 코드 길이:', currentCode.length, '변경 후:', updatedCode.length);
@@ -209,7 +239,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       onCodeChange(updatedCode);
       window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
     } else {
-      console.warn('[CanvasRenderer] 코드가 변경되지 않음 - insertShapeInCode 확인 필요');
+      console.warn('[CanvasRenderer] 코드가 변경되지 않음');
       console.log('[CanvasRenderer] 현재 코드 첫 200자:', currentCode.substring(0, 200));
     }
     
@@ -232,33 +262,81 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
 
   // 선택된 요소 삭제 핸들러
   const handleDeleteSelectedElement = useCallback(() => {
-    if (!selectedElementId) return;
+    console.log('[CanvasRenderer] handleDeleteSelectedElement 호출, selectedElementId:', selectedElementId);
+    
+    if (!selectedElementId) {
+      console.warn('[CanvasRenderer] 선택된 요소 없음');
+      return;
+    }
     
     const root = reactRootRef.current;
-    if (!root) return;
+    if (!root) {
+      console.warn('[CanvasRenderer] reactRootRef.current가 없음');
+      return;
+    }
     
-    const element = root.querySelector(`[data-element-id="${selectedElementId}"]`) as HTMLElement;
+    let element = root.querySelector(`[data-element-id="${selectedElementId}"]`) as HTMLElement;
     if (!element) {
       console.warn('[CanvasRenderer] 삭제할 요소를 찾을 수 없음:', selectedElementId);
       return;
     }
     
-    const locData = element.getAttribute('data-loc');
+    console.log('[CanvasRenderer] 찾은 요소:', element.tagName, element.getAttribute('data-element-id'));
+    
+    let locData = element.getAttribute('data-loc');
+    
+    // loc 정보가 없으면 부모 요소에서 찾기
+    if (!locData) {
+      console.log('[CanvasRenderer] loc 정보 없음, 부모 요소 탐색 시작');
+      const parentWithLoc = element.closest('[data-loc]') as HTMLElement;
+      if (parentWithLoc && parentWithLoc !== root) {
+        element = parentWithLoc;
+        locData = parentWithLoc.getAttribute('data-loc');
+        console.log('[CanvasRenderer] 부모 요소에서 loc 찾음:', parentWithLoc.getAttribute('data-element-id'));
+      }
+    }
+    
     if (!locData) {
       console.warn('[CanvasRenderer] loc 정보가 없어서 삭제 불가');
+      console.log('[CanvasRenderer] 요소의 모든 속성:', Array.from(element.attributes).map(a => `${a.name}=${a.value}`));
       return;
     }
     
-    const loc = JSON.parse(locData);
-    console.log('[CanvasRenderer] 요소 삭제:', { selectedElementId, loc });
-    
-    const updatedCode = deleteElementFromCode(code, loc);
-    
-    if (updatedCode !== code) {
-      onCodeChange(updatedCode);
-      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
-      setSelectedElementId(null);
-      setContextMenu({ visible: false, x: 0, y: 0, elementId: null });
+    try {
+      const loc = JSON.parse(locData);
+      console.log('[CanvasRenderer] 요소 삭제 시작:', { 
+        elementId: element.getAttribute('data-element-id'), 
+        loc 
+      });
+      
+      const updatedCode = deleteElementFromCode(code, loc);
+      
+      console.log('[CanvasRenderer] 삭제 결과:', {
+        codeChanged: updatedCode !== code,
+        oldLength: code.length,
+        newLength: updatedCode.length
+      });
+      
+      if (updatedCode !== code) {
+        // Ghost box 제거
+        const overlay = overlayRef.current;
+        if (overlay) {
+          const ghostBox = overlay.querySelector('.ghost-box');
+          if (ghostBox) {
+            ghostBox.remove();
+          }
+        }
+        
+        onCodeChange(updatedCode);
+        window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+        setSelectedElementId(null);
+        setContextMenu({ visible: false, x: 0, y: 0, elementId: null });
+        console.log('[CanvasRenderer] 요소 삭제 완료');
+      } else {
+        console.warn('[CanvasRenderer] 코드가 변경되지 않음');
+      }
+    } catch (error) {
+      console.error('[CanvasRenderer] 삭제 중 오류:', error);
     }
   }, [selectedElementId, code, onCodeChange, setSelectedElementId]);
 
@@ -351,8 +429,13 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       }
     };
     
+    // 텍스트 박스는 클릭으로 즉시 생성되므로 프리뷰 불필요
+    if (drawingMode === 'textbox') {
+      return null;
+    }
+    
     // 삼각형, 다이아몬드, 별, 오각형, 육각형은 SVG로 렌더링
-    if (['triangle', 'diamond', 'star', 'pentagon', 'hexagon'].includes(drawingMode)) {
+    if (['triangle', 'diamond', 'star', 'pentagon', 'hexagon'].includes(drawingMode as string)) {
       return (
         <svg
           style={{
@@ -556,6 +639,14 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       return;
     }
 
+    // 편집 모드일 때는 ghost box 숨기기 (리사이즈 핸들러와 충돌 방지)
+    if (editingElementId) {
+      if (overlayRef.current) {
+        overlayRef.current.innerHTML = '';
+      }
+      return;
+    }
+
     const root = reactRootRef.current;
     console.log('Ghost box 생성 시도, selectedElementId:', selectedElementId);
     const element = root.querySelector(`[data-element-id="${selectedElementId}"]`) as HTMLElement;
@@ -576,7 +667,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [selectedElementId, componentTree]);
+  }, [selectedElementId, componentTree, editingElementId]);
 
   // 외부 클릭 시 선택 해제
   useEffect(() => {
@@ -865,6 +956,17 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       if ((e.target as HTMLElement).classList.contains('resize-handle')) {
         return;
       }
+      
+      // 우클릭인 경우 드래그하지 않음
+      if (e.button !== 0) {
+        return;
+      }
+      
+      // 컨텍스트 메뉴가 열려있으면 드래그하지 않음
+      const contextMenuEl = document.querySelector('.context-menu');
+      if (contextMenuEl) {
+        return;
+      }
 
       dragging = true;
       // 마우스 좌표는 zoom이 적용된 화면 좌표이므로, 실제 좌표로 변환
@@ -1079,6 +1181,18 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     handles.forEach((handle) => {
       handle.addEventListener('mousedown', (e) => {
         const mouseEvent = e as MouseEvent;
+        
+        // 우클릭인 경우 리사이즈하지 않음
+        if (mouseEvent.button !== 0) {
+          return;
+        }
+        
+        // 컨텍스트 메뉴가 열려있으면 리사이즈하지 않음
+        const contextMenuEl = document.querySelector('.context-menu');
+        if (contextMenuEl) {
+          return;
+        }
+        
         resizing = true;
         startX = mouseEvent.clientX;
         startY = mouseEvent.clientY;
@@ -1448,6 +1562,18 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
           onClick={(e) => {
             e.stopPropagation();
             if (!isEditing) {
+              // 텍스트 노드에 loc 정보가 없으면 부모 요소 선택
+              if (!dataLoc) {
+                const parentEl = (e.currentTarget as HTMLElement).closest('[data-loc]');
+                if (parentEl) {
+                  const parentId = parentEl.getAttribute('data-element-id');
+                  if (parentId) {
+                    console.log('[CanvasRenderer] 텍스트 노드 클릭 → 부모 요소 선택:', parentId);
+                    setSelectedElementId(parentId);
+                    return;
+                  }
+                }
+              }
               setSelectedElementId(elementId);
             }
           }}
@@ -1846,8 +1972,12 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       {/* 그리기 모드 안내 메시지 */}
       {drawingMode && !isDrawing && (
         <div className="drawing-mode-hint">
-          <span>🎨 {getShapeDisplayName(drawingMode)} 그리기 모드</span>
-          <span className="hint-text">캔버스에서 드래그하여 도형을 그리세요</span>
+          <span>{drawingMode === 'textbox' ? '📝' : '🎨'} {getShapeDisplayName(drawingMode)} 모드</span>
+          <span className="hint-text">
+            {drawingMode === 'textbox' 
+              ? '캔버스에서 클릭하여 텍스트를 추가하세요' 
+              : '캔버스에서 드래그하여 도형을 그리세요'}
+          </span>
           <button 
             className="cancel-drawing-btn"
             onClick={() => setDrawingMode(null)}
@@ -1876,7 +2006,9 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
+              console.log('[CanvasRenderer] 컨텍스트 메뉴 삭제 버튼 클릭');
               handleDeleteSelectedElement();
+              handleCloseContextMenu();
             }}
           >
             <span className="context-menu-icon">🗑️</span>
@@ -1890,8 +2022,8 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
   );
 }
 
-// 도형 이름 한글 변환
-function getShapeDisplayName(shapeType: ShapeType): string {
+// 도형/텍스트박스 이름 한글 변환
+function getShapeDisplayName(drawingMode: DrawingModeType): string {
   const names: Record<string, string> = {
     rectangle: '사각형',
     roundedRectangle: '둥근 사각형',
@@ -1903,6 +2035,7 @@ function getShapeDisplayName(shapeType: ShapeType): string {
     star: '별',
     pentagon: '오각형',
     hexagon: '육각형',
+    textbox: '텍스트 박스',
   };
-  return names[shapeType || ''] || '도형';
+  return names[drawingMode || ''] || '요소';
 }

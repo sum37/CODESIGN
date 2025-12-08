@@ -10,6 +10,9 @@ interface ElementPosition {
 // 도형 그리기 모드 상태
 export type ShapeType = 'rectangle' | 'roundedRectangle' | 'parallelogram' | 'circle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'pentagon' | 'hexagon' | null;
 
+// 그리기 모드 타입 (도형 또는 텍스트박스)
+export type DrawingModeType = ShapeType | 'textbox';
+
 interface CanvasState {
   selectedElementId: string | null;
   setSelectedElementId: (id: string | null) => void;
@@ -17,8 +20,8 @@ interface CanvasState {
   updateElementPosition: (id: string, position: Partial<ElementPosition>) => void;
   
   // 도형 그리기 모드 상태
-  drawingMode: ShapeType;
-  setDrawingMode: (mode: ShapeType) => void;
+  drawingMode: DrawingModeType;
+  setDrawingMode: (mode: DrawingModeType) => void;
   isDrawing: boolean;
   setIsDrawing: (drawing: boolean) => void;
   drawStartPosition: { x: number; y: number } | null;
