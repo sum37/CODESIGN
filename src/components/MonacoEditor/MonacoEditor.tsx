@@ -132,11 +132,19 @@ export function MonacoEditor() {
           options={{
             minimap: { enabled: true },
             fontSize: 14,
-            wordWrap: 'on',
+            wordWrap: 'off', // 가로 스크롤 활성화
             automaticLayout: true,
             tabSize: 2,
             formatOnPaste: true,
             formatOnType: true,
+            // 스크롤바 설정
+            scrollbar: {
+              horizontal: 'visible',
+              vertical: 'visible',
+              horizontalScrollbarSize: 12,
+              verticalScrollbarSize: 12,
+            },
+            scrollBeyondLastLine: false,
             // 에러 표시 비활성화
             quickSuggestions: false,
             suggestOnTriggerCharacters: false,
