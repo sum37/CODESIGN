@@ -146,6 +146,31 @@ export function Canvas() {
     reader.readAsDataURL(file);
   };
 
+  // fontSize 변경 핸들러
+  const handleFontSizeChange = (fontSize: number) => {
+    console.log('[Canvas] fontSize 변경:', fontSize, '선택된 요소:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] 선택된 요소 또는 loc 정보가 없음');
+      return;
+    }
+    
+    // 코드에서 해당 요소의 fontSize 스타일 업데이트
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { style: { fontSize: `${fontSize}px` } },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] fontSize 변경 완료');
+    }
+  };
+
   // fontWeight 변경 핸들러
   const handleFontWeightChange = (fontWeight: 'normal' | 'bold') => {
     console.log('[Canvas] fontWeight 변경:', fontWeight, '선택된 요소:', selectedElementId);
@@ -261,6 +286,7 @@ export function Canvas() {
         onAddText={handleAddText}
         onShapeSelect={handleShapeSelect}
         onImageSelect={handleImageSelect}
+        onFontSizeChange={handleFontSizeChange}
         onFontWeightChange={handleFontWeightChange}
         onFontStyleChange={handleFontStyleChange}
         onTextColorChange={handleTextColorChange}

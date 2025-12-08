@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './Toolbar.css';
 
 interface TextEditControlsProps {
@@ -32,6 +32,21 @@ export function TextEditControls({
   onToggleTextColorMenu,
   textColorMenuRef,
 }: TextEditControlsProps) {
+  // fontSize input을 위한 로컬 상태
+  const [fontSizeInput, setFontSizeInput] = useState(String(fontSize));
+  
+  // fontSize prop이 변경되면 로컬 상태도 업데이트
+  useEffect(() => {
+    setFontSizeInput(String(fontSize));
+  }, [fontSize]);
+
+  // Enter 키 또는 blur 시 fontSize 적용
+  const applyFontSize = () => {
+    const newSize = Math.max(8, Math.min(200, parseInt(fontSizeInput) || 16));
+    setFontSizeInput(String(newSize));
+    onFontSizeChange(newSize);
+  };
+
   const buttonStyle = {
     padding: '4px 8px',
     background: '#000000',
@@ -80,9 +95,24 @@ export function TextEditControls({
             </svg>
           </button>
           <input 
-            type="number" 
-            value={fontSize}
-            onChange={(e) => onFontSizeChange(Math.max(8, Math.min(200, parseInt(e.target.value) || 16)))}
+            type="text" 
+            value={fontSizeInput}
+            onChange={(e) => {
+              // 숫자만 입력 가능하도록 필터링
+              const value = e.target.value.replace(/[^0-9]/g, '');
+              setFontSizeInput(value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                applyFontSize();
+                e.currentTarget.blur();
+              }
+            }}
+            onBlur={applyFontSize}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.currentTarget.select(); // 클릭 시 전체 선택
+            }}
             style={{ 
               width: '36px', 
               padding: '4px', 

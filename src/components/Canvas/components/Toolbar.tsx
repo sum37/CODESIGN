@@ -9,12 +9,13 @@ interface ToolbarProps {
   onAddText: () => void;
   onShapeSelect: (shapeType: string) => void;
   onImageSelect: (file: File) => void;
+  onFontSizeChange?: (fontSize: number) => void;
   onFontWeightChange?: (fontWeight: 'normal' | 'bold') => void;
   onFontStyleChange?: (fontStyle: 'normal' | 'italic') => void;
   onTextColorChange?: (color: string) => void;
 }
 
-export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontWeightChange, onFontStyleChange, onTextColorChange }: ToolbarProps) {
+export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeChange, onFontWeightChange, onFontStyleChange, onTextColorChange }: ToolbarProps) {
   const toolbar = useToolbar();
   const { drawingMode, selectedElementId } = useCanvasStore();
 
@@ -22,6 +23,16 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontWeightC
     toolbar.setShowShapeMenu(false);
     console.log(`${shapeType} 그리기 모드 활성화`);
     onShapeSelect(shapeType);
+  };
+
+  // fontSize 변경 핸들러 - 선택된 요소가 있으면 코드 업데이트
+  const handleFontSizeChange = (size: number) => {
+    toolbar.setFontSize(size);
+    
+    // 선택된 요소가 있으면 실제 코드에 반영
+    if (selectedElementId && onFontSizeChange) {
+      onFontSizeChange(size);
+    }
   };
 
   // fontWeight 토글 핸들러 - 선택된 요소가 있으면 코드 업데이트
@@ -75,7 +86,7 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontWeightC
       {/* 텍스트 편집 컨트롤 */}
       <TextEditControls
         fontSize={toolbar.fontSize}
-        onFontSizeChange={toolbar.setFontSize}
+        onFontSizeChange={handleFontSizeChange}
         textColor={toolbar.textColor}
         onTextColorChange={handleTextColorChange}
         fontWeight={toolbar.fontWeight}
