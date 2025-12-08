@@ -792,7 +792,8 @@ function parseJSXElement(node: t.JSXElement, importedComponents?: Map<string, Co
   const cleanProps: Record<string, any> = {};
   Object.entries(props).forEach(([key, value]) => {
     if (key === 'style') {
-      // style은 이미 처리됨
+      // style 객체는 반드시 포함되어야 함 (도형 등의 인라인 스타일 유지)
+      cleanProps[key] = value;
     } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
       cleanProps[key] = value;
     } else if (value === null || value === undefined) {
@@ -1155,6 +1156,11 @@ function parseObjectExpression(node: t.ObjectExpression): Record<string, any> {
       const key = t.isIdentifier(prop.key) ? prop.key.name : String(prop.key);
       const value = parseExpressionValue(prop.value);
       obj[key] = value;
+      
+      // 디버그: 주요 스타일 속성 파싱 확인
+      if (key === 'position' || key === 'backgroundColor' || key === 'zIndex' || key === 'left' || key === 'top') {
+        console.log('[componentParser] 스타일 속성 파싱:', { key, value, valueType: typeof value });
+      }
     }
   });
   

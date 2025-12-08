@@ -4,6 +4,7 @@ import { readFile } from '../../lib/fileSystem/fileSystem';
 import { CanvasRenderer } from './CanvasRenderer';
 import { useCanvasSync } from '../../hooks/useCanvasSync';
 import { Toolbar } from './components/Toolbar';
+import { useCanvasStore, ShapeType } from '../../stores/canvasStore';
 import './Canvas.css';
 
 export function Canvas() {
@@ -124,10 +125,13 @@ export function Canvas() {
     console.log('텍스트 추가');
   };
   
-  // 도형 선택 핸들러
+  // 도형 그리기 모드 상태
+  const { drawingMode, setDrawingMode } = useCanvasStore();
+  
+  // 도형 선택 핸들러 - 그리기 모드 활성화
   const handleShapeSelect = (shapeType: string) => {
-    // TODO: 도형 추가 로직 구현
-    console.log('도형 선택:', shapeType);
+    console.log('도형 선택, 그리기 모드 활성화:', shapeType);
+    setDrawingMode(shapeType as ShapeType);
   };
   
   // 이미지 선택 핸들러
@@ -187,12 +191,13 @@ export function Canvas() {
         ref={canvasWrapperRef}
       >
         <div 
-          className="canvas-content"
+          className={`canvas-content ${drawingMode ? 'drawing-mode' : ''}`}
           ref={canvasContentRef}
           style={{
             transform: `scale(${zoomLevel})`,
             transformOrigin: 'top left',
             position: 'relative',
+            cursor: drawingMode ? 'crosshair' : 'default',
           }}
         >
           {componentCode ? (

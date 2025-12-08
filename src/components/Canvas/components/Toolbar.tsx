@@ -2,6 +2,7 @@ import { ToolbarButtonGroup } from './ToolbarButtonGroup';
 import { TextEditControls } from './TextEditControls';
 import { ShapeEditControls } from './ShapeEditControls';
 import { useToolbar } from '../hooks/useToolbar';
+import { useCanvasStore } from '../../../stores/canvasStore';
 import './Toolbar.css';
 
 interface ToolbarProps {
@@ -12,12 +13,11 @@ interface ToolbarProps {
 
 export function Toolbar({ onAddText, onShapeSelect, onImageSelect }: ToolbarProps) {
   const toolbar = useToolbar();
+  const { drawingMode } = useCanvasStore();
 
   const handleShapeSelect = (shapeType: string) => {
-    toolbar.setPendingShapeType(shapeType);
     toolbar.setShowShapeMenu(false);
-    console.log(`${shapeType} 추가`);
-    setTimeout(() => toolbar.setPendingShapeType(null), 1000);
+    console.log(`${shapeType} 그리기 모드 활성화`);
     onShapeSelect(shapeType);
   };
 
@@ -29,7 +29,7 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect }: ToolbarProp
         showShapeMenu={toolbar.showShapeMenu}
         onToggleShapeMenu={() => toolbar.setShowShapeMenu(!toolbar.showShapeMenu)}
         onShapeSelect={handleShapeSelect}
-        pendingShapeType={toolbar.pendingShapeType}
+        pendingShapeType={drawingMode}
         onImageSelect={onImageSelect}
         menuRef={toolbar.menuRef}
       />

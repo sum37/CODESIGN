@@ -188,6 +188,90 @@ function updateCodeByLocation(
   console.log('[codeModifier] 여는 태그 내용:', openingTagContent.substring(0, 100) + '...');
   console.log('[codeModifier] 위치 인덱스:', { startCharIndex, endCharIndex });
   
+  // 기존 style 속성에서 스타일 값들 추출 (backgroundColor, zIndex 등 보존)
+  const existingStyles: Record<string, string> = {};
+  
+  // style={{ ... }} 내용을 중첩 괄호를 고려하여 추출
+  const styleStartIdx = openingTagContent.indexOf('style={{');
+  if (styleStartIdx !== -1) {
+    let braceCount = 0;
+    let styleContentStart = styleStartIdx + 8; // 'style={{' 길이
+    let styleContentEnd = -1;
+    
+    for (let i = styleContentStart; i < openingTagContent.length; i++) {
+      if (openingTagContent[i] === '{') {
+        braceCount++;
+      } else if (openingTagContent[i] === '}') {
+        if (braceCount === 0) {
+          styleContentEnd = i;
+          break;
+        }
+        braceCount--;
+      }
+    }
+    
+    if (styleContentEnd !== -1) {
+      const styleContent = openingTagContent.substring(styleContentStart, styleContentEnd);
+      console.log('[codeModifier] 스타일 내용:', styleContent);
+      
+      // 각 스타일 속성 파싱 - 콤마로 분리하되 따옴표 안의 콤마는 무시
+      let currentProp = '';
+      let inString = false;
+      let stringChar = '';
+      
+      for (let i = 0; i < styleContent.length; i++) {
+        const char = styleContent[i];
+        
+        if ((char === '"' || char === "'") && (i === 0 || styleContent[i - 1] !== '\\')) {
+          if (!inString) {
+            inString = true;
+            stringChar = char;
+          } else if (char === stringChar) {
+            inString = false;
+          }
+        }
+        
+        if (char === ',' && !inString) {
+          // 속성 완료
+          const prop = currentProp.trim();
+          if (prop) {
+            const colonIndex = prop.indexOf(':');
+            if (colonIndex > 0) {
+              const key = prop.substring(0, colonIndex).trim();
+              let value = prop.substring(colonIndex + 1).trim();
+              // 따옴표 제거
+              if ((value.startsWith('"') && value.endsWith('"')) || 
+                  (value.startsWith("'") && value.endsWith("'"))) {
+                value = value.slice(1, -1);
+              }
+              existingStyles[key] = value;
+            }
+          }
+          currentProp = '';
+        } else {
+          currentProp += char;
+        }
+      }
+      
+      // 마지막 속성 처리
+      const prop = currentProp.trim();
+      if (prop) {
+        const colonIndex = prop.indexOf(':');
+        if (colonIndex > 0) {
+          const key = prop.substring(0, colonIndex).trim();
+          let value = prop.substring(colonIndex + 1).trim();
+          if ((value.startsWith('"') && value.endsWith('"')) || 
+              (value.startsWith("'") && value.endsWith("'"))) {
+            value = value.slice(1, -1);
+          }
+          existingStyles[key] = value;
+        }
+      }
+      
+      console.log('[codeModifier] 기존 스타일 추출:', existingStyles);
+    }
+  }
+  
   // 모든 style={{...}} 패턴 제거 (중첩된 중괄호 처리)
   let cleanedTag = openingTagContent;
   
@@ -227,9 +311,18 @@ function updateCodeByLocation(
     }
   }
   
-  // 새 style 속성 생성
-  const newStyleString = Object.entries(styleUpdates)
-    .map(([key, value]) => `${key}: "${value}"`)
+  // 기존 스타일과 새 스타일 병합 (새 스타일이 우선)
+  const mergedStyles: Record<string, string> = { ...existingStyles, ...styleUpdates };
+  
+  // 새 style 속성 생성 (숫자 값은 따옴표 없이, 문자열 값은 따옴표 포함)
+  const newStyleString = Object.entries(mergedStyles)
+    .map(([key, value]) => {
+      // zIndex 같은 숫자 값은 따옴표 없이
+      if (key === 'zIndex' && !isNaN(Number(value))) {
+        return `${key}: ${value}`;
+      }
+      return `${key}: "${value}"`;
+    })
     .join(', ');
   
   // 태그명 뒤에 새 style 삽입
@@ -318,6 +411,246 @@ function updateObjectExpression(node: t.ObjectExpression, updates: Record<string
       );
     }
   });
+}
+
+/**
+ * 새로운 도형을 코드에 삽입
+ * @param code - 원본 코드
+ * @param shapeType - 도형 타입
+ * @param bounds - 도형의 위치와 크기
+ */
+export function insertShapeInCode(
+  code: string,
+  shapeType: string,
+  bounds: { x: number; y: number; width: number; height: number }
+): string {
+  console.log('[codeModifier] insertShapeInCode 호출:', { shapeType, bounds });
+  
+  // 도형 타입에 따른 JSX 생성
+  const shapeJSX = generateShapeJSX(shapeType, bounds);
+  
+  if (!shapeJSX) {
+    console.warn('[codeModifier] 도형 JSX 생성 실패');
+    return code;
+  }
+  
+  // return 문 찾기 - 마지막 return을 찾음 (중첩된 함수 내부의 return 방지)
+  // 1. return ( 패턴
+  // 2. return < 패턴
+  // 3. 화살표 함수에서 직접 JSX 반환: => (
+  // 4. 화살표 함수에서 직접 JSX 반환: => <
+  
+  let insertIndex = -1;
+  let baseIndent = '    ';
+  
+  // 방법 1: return 문 찾기
+  const returnRegex = /return\s*\(/g;
+  let lastReturnMatch: RegExpExecArray | null = null;
+  let match: RegExpExecArray | null;
+  
+  while ((match = returnRegex.exec(code)) !== null) {
+    lastReturnMatch = match;
+  }
+  
+  if (lastReturnMatch) {
+    console.log('[codeModifier] return ( 찾음, 위치:', lastReturnMatch.index);
+    
+    const afterReturn = code.substring(lastReturnMatch.index + lastReturnMatch[0].length);
+    const tagEndPos = findOpeningTagEnd(afterReturn);
+    
+    if (tagEndPos !== -1) {
+      insertIndex = lastReturnMatch.index + lastReturnMatch[0].length + tagEndPos + 1;
+      
+      // 들여쓰기 계산
+      const linesBefore = code.substring(0, lastReturnMatch.index).split('\n');
+      const lastLine = linesBefore[linesBefore.length - 1];
+      const indentMatch = lastLine.match(/^([ \t]*)/);
+      baseIndent = indentMatch ? indentMatch[1] + '    ' : '      ';
+    }
+  }
+  
+  // 방법 2: return < 패턴 (괄호 없이)
+  if (insertIndex === -1) {
+    const returnDirectRegex = /return\s+</g;
+    let lastDirectMatch: RegExpExecArray | null = null;
+    
+    while ((match = returnDirectRegex.exec(code)) !== null) {
+      lastDirectMatch = match;
+    }
+    
+    if (lastDirectMatch) {
+      console.log('[codeModifier] return < 찾음, 위치:', lastDirectMatch.index);
+      
+      // < 위치부터 검색
+      const startPos = lastDirectMatch.index + lastDirectMatch[0].length - 1;
+      const afterReturn = code.substring(startPos);
+      const tagEndPos = findOpeningTagEnd(afterReturn);
+      
+      if (tagEndPos !== -1) {
+        insertIndex = startPos + tagEndPos + 1;
+        
+        // 들여쓰기 계산
+        const linesBefore = code.substring(0, lastDirectMatch.index).split('\n');
+        const lastLine = linesBefore[linesBefore.length - 1];
+        const indentMatch = lastLine.match(/^([ \t]*)/);
+        baseIndent = indentMatch ? indentMatch[1] + '    ' : '      ';
+      }
+    }
+  }
+  
+  // 방법 3: 화살표 함수 패턴 => (
+  if (insertIndex === -1) {
+    const arrowParenRegex = /=>\s*\(/g;
+    let lastArrowMatch: RegExpExecArray | null = null;
+    
+    while ((match = arrowParenRegex.exec(code)) !== null) {
+      lastArrowMatch = match;
+    }
+    
+    if (lastArrowMatch) {
+      console.log('[codeModifier] => ( 찾음, 위치:', lastArrowMatch.index);
+      
+      const afterArrow = code.substring(lastArrowMatch.index + lastArrowMatch[0].length);
+      const tagEndPos = findOpeningTagEnd(afterArrow);
+      
+      if (tagEndPos !== -1) {
+        insertIndex = lastArrowMatch.index + lastArrowMatch[0].length + tagEndPos + 1;
+        
+        // 들여쓰기 계산
+        const linesBefore = code.substring(0, lastArrowMatch.index).split('\n');
+        const lastLine = linesBefore[linesBefore.length - 1];
+        const indentMatch = lastLine.match(/^([ \t]*)/);
+        baseIndent = indentMatch ? indentMatch[1] + '    ' : '      ';
+      }
+    }
+  }
+  
+  if (insertIndex === -1) {
+    console.warn('[codeModifier] JSX 삽입 위치를 찾을 수 없음');
+    return code;
+  }
+  
+  console.log('[codeModifier] 삽입 위치:', insertIndex, '들여쓰기:', JSON.stringify(baseIndent));
+  
+  // 도형 JSX를 루트 요소의 첫 번째 자식으로 삽입
+  const indentedShapeJSX = '\n' + baseIndent + shapeJSX;
+  
+  const result = code.substring(0, insertIndex) + indentedShapeJSX + code.substring(insertIndex);
+  
+  console.log('[codeModifier] 도형 삽입 완료, 코드 길이 변화:', code.length, '->', result.length);
+  
+  return result;
+}
+
+/**
+ * 여는 태그의 끝(>) 위치 찾기
+ * Fragment (<>) 와 일반 태그 모두 처리
+ */
+function findOpeningTagEnd(code: string): number {
+  let braceCount = 0;
+  let inString = false;
+  let stringChar = '';
+  let angleCount = 0;
+  
+  for (let i = 0; i < code.length; i++) {
+    const char = code[i];
+    const prevChar = i > 0 ? code[i - 1] : '';
+    
+    // 문자열 처리
+    if ((char === '"' || char === "'" || char === '`') && prevChar !== '\\') {
+      if (!inString) {
+        inString = true;
+        stringChar = char;
+      } else if (char === stringChar) {
+        inString = false;
+      }
+      continue;
+    }
+    
+    if (inString) continue;
+    
+    // 중괄호 카운트 (JSX 표현식 내부)
+    if (char === '{') braceCount++;
+    else if (char === '}') braceCount--;
+    
+    // < 카운트
+    if (char === '<') angleCount++;
+    
+    // 여는 태그 끝 찾기 (중괄호 밖에서만)
+    if (char === '>' && braceCount === 0) {
+      // self-closing(/>)이 아니고, 첫 번째 태그일 때만
+      if (prevChar !== '/' && angleCount === 1) {
+        return i;
+      }
+      angleCount--;
+    }
+  }
+  
+  return -1;
+}
+
+/**
+ * 도형 타입에 따른 JSX 코드 생성
+ */
+function generateShapeJSX(
+  shapeType: string,
+  bounds: { x: number; y: number; width: number; height: number }
+): string | null {
+  const { x, y, width, height } = bounds;
+  
+  // 고유 ID 생성 (타임스탬프 기반)
+  const shapeId = `shape-${Date.now()}`;
+  
+  // 기본 스타일 - non-self-closing div로 생성
+  const baseStyle = `position: "absolute", left: "${x}px", top: "${y}px", width: "${width}px", height: "${height}px", zIndex: 100`;
+  
+  switch (shapeType) {
+    case 'rectangle':
+      return `<div id="${shapeId}" style={{${baseStyle}, backgroundColor: "#f9a8d4"}}></div>`;
+    
+    case 'roundedRectangle':
+      return `<div id="${shapeId}" style={{${baseStyle}, backgroundColor: "#f9a8d4", borderRadius: "8px"}}></div>`;
+    
+    case 'parallelogram':
+      return `<div id="${shapeId}" style={{${baseStyle}, backgroundColor: "#f9a8d4", transform: "skew(-20deg)"}}></div>`;
+    
+    case 'circle':
+      // 원은 가로/세로 중 작은 값으로 정사각형으로 만듦
+      const circleSize = Math.min(width, height);
+      return `<div id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", width: "${circleSize}px", height: "${circleSize}px", backgroundColor: "#f9a8d4", borderRadius: "50%", zIndex: 100}}></div>`;
+    
+    case 'ellipse':
+      return `<div id="${shapeId}" style={{${baseStyle}, backgroundColor: "#f9a8d4", borderRadius: "50%"}}></div>`;
+    
+    case 'triangle':
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <polygon points="50,0 100,100 0,100" fill="#f9a8d4" />
+      </svg>`;
+    
+    case 'diamond':
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <polygon points="50,0 100,50 50,100 0,50" fill="#f9a8d4" />
+      </svg>`;
+    
+    case 'star':
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <polygon points="50,0 61,35 98,35 68,57 79,91 50,70 21,91 32,57 2,35 39,35" fill="#f9a8d4" />
+      </svg>`;
+    
+    case 'pentagon':
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <polygon points="50,0 100,38 81,100 19,100 0,38" fill="#f9a8d4" />
+      </svg>`;
+    
+    case 'hexagon':
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <polygon points="50,0 93,25 93,75 50,100 7,75 7,25" fill="#f9a8d4" />
+      </svg>`;
+    
+    default:
+      console.warn('[codeModifier] 알 수 없는 도형 타입:', shapeType);
+      return null;
+  }
 }
 
 /**
@@ -423,6 +756,62 @@ export function updateTextInCode(
   
   // 코드 교체
   const result = code.substring(0, startCharIndex) + newElementContent + code.substring(endCharIndex);
+  
+  return result;
+}
+
+/**
+ * 요소를 코드에서 삭제
+ * @param code - 원본 코드
+ * @param loc - 요소의 AST 위치 정보
+ */
+export function deleteElementFromCode(
+  code: string,
+  loc: SourceLocation
+): string {
+  console.log('[codeModifier] deleteElementFromCode 호출:', { loc });
+  
+  const lines = code.split('\n');
+  const targetLine = loc.start.line - 1; // 0-indexed
+  const endLine = loc.end.line - 1;
+  
+  if (targetLine < 0 || targetLine >= lines.length) {
+    console.warn('[codeModifier] 유효하지 않은 라인 번호:', loc.start.line);
+    return code;
+  }
+  
+  // 요소의 시작 문자 인덱스 계산
+  let startCharIndex = 0;
+  for (let i = 0; i < targetLine; i++) {
+    startCharIndex += lines[i].length + 1; // +1 for newline
+  }
+  startCharIndex += loc.start.column;
+  
+  // 요소의 끝 문자 인덱스 계산
+  let endCharIndex = 0;
+  for (let i = 0; i < endLine; i++) {
+    endCharIndex += lines[i].length + 1;
+  }
+  endCharIndex += loc.end.column;
+  
+  // 요소 전체 내용 확인
+  const elementContent = code.substring(startCharIndex, endCharIndex);
+  console.log('[codeModifier] 삭제할 요소:', elementContent.substring(0, 100));
+  
+  // 요소 앞의 공백/줄바꿈도 함께 삭제 (깔끔한 코드 유지)
+  let deleteStart = startCharIndex;
+  while (deleteStart > 0 && (code[deleteStart - 1] === ' ' || code[deleteStart - 1] === '\t')) {
+    deleteStart--;
+  }
+  // 줄바꿈도 삭제 (요소가 한 줄을 차지하는 경우)
+  if (deleteStart > 0 && code[deleteStart - 1] === '\n') {
+    deleteStart--;
+  }
+  
+  // 요소 삭제
+  const result = code.substring(0, deleteStart) + code.substring(endCharIndex);
+  
+  console.log('[codeModifier] 요소 삭제 완료, 코드 길이 변화:', code.length, '->', result.length);
   
   return result;
 }
