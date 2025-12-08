@@ -193,10 +193,9 @@ export function TextEditControls({
               // 편집 모드: 선택된 텍스트에 bold 적용
               document.execCommand('bold', false);
               console.log('[TextEditControls] execCommand bold 실행');
-            } else {
-              // 선택 모드: 전체 요소의 fontWeight 변경
-              onFontWeightToggle();
             }
+            // 항상 toolbar 상태 업데이트 및 선택된 요소에 반영
+            onFontWeightToggle();
           }}
           style={{ 
             padding: '4px 12px', 
@@ -227,10 +226,9 @@ export function TextEditControls({
               // 편집 모드: 선택된 텍스트에 italic 적용
               document.execCommand('italic', false);
               console.log('[TextEditControls] execCommand italic 실행');
-            } else {
-              // 선택 모드: 전체 요소의 fontStyle 변경
-              onFontStyleToggle();
             }
+            // 항상 toolbar 상태 업데이트 및 선택된 요소에 반영
+            onFontStyleToggle();
           }}
           style={{ 
             padding: '4px 12px', 
