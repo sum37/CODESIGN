@@ -70,6 +70,34 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     editingRef.current = null;
   }, [code, onCodeChange]);
 
+  // 편집 모드에서 외부 클릭 감지 (편집 모드 종료)
+  useEffect(() => {
+    if (!editingElementId) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      const editingElement = editingRef.current;
+      if (!editingElement) return;
+      
+      const target = e.target as HTMLElement;
+      
+      // 클릭한 대상이 편집 중인 요소 내부인지 확인
+      if (editingElement.contains(target)) {
+        return;
+      }
+      
+      // 외부 클릭 시 blur 호출하여 편집 종료
+      console.log('[CanvasRenderer] 편집 모드 외부 클릭 감지 - 편집 종료');
+      editingElement.blur();
+    };
+    
+    // mousedown으로 더 빠르게 감지
+    window.addEventListener('mousedown', handleClickOutside);
+    
+    return () => {
+      window.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [editingElementId]);
+
   // 더블클릭으로 텍스트 편집 시작
   const handleTextDoubleClick = useCallback((
     e: React.MouseEvent,
