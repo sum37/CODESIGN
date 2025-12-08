@@ -10,13 +10,14 @@ interface ToolbarProps {
   onShapeSelect: (shapeType: string) => void;
   onImageSelect: (file: File) => void;
   onFontSizeChange?: (fontSize: number) => void;
+  onFontFamilyChange?: (fontFamily: string) => void;
   onFontWeightChange?: (fontWeight: 'normal' | 'bold') => void;
   onFontStyleChange?: (fontStyle: 'normal' | 'italic') => void;
   onTextColorChange?: (color: string) => void;
   onTextAlignChange?: (textAlign: 'left' | 'center' | 'right') => void;
 }
 
-export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeChange, onFontWeightChange, onFontStyleChange, onTextColorChange, onTextAlignChange }: ToolbarProps) {
+export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeChange, onFontFamilyChange, onFontWeightChange, onFontStyleChange, onTextColorChange, onTextAlignChange }: ToolbarProps) {
   const toolbar = useToolbar();
   const { drawingMode, selectedElementId } = useCanvasStore();
 
@@ -33,6 +34,16 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeCha
     // 선택된 요소가 있으면 실제 코드에 반영
     if (selectedElementId && onFontSizeChange) {
       onFontSizeChange(size);
+    }
+  };
+
+  // fontFamily 변경 핸들러 - 선택된 요소가 있으면 코드 업데이트
+  const handleFontFamilyChange = (family: string) => {
+    toolbar.setFontFamily(family);
+    
+    // 선택된 요소가 있으면 실제 코드에 반영
+    if (selectedElementId && onFontFamilyChange) {
+      onFontFamilyChange(family);
     }
   };
 
@@ -98,6 +109,8 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeCha
       <TextEditControls
         fontSize={toolbar.fontSize}
         onFontSizeChange={handleFontSizeChange}
+        fontFamily={toolbar.fontFamily}
+        onFontFamilyChange={handleFontFamilyChange}
         textColor={toolbar.textColor}
         onTextColorChange={handleTextColorChange}
         fontWeight={toolbar.fontWeight}

@@ -20,6 +20,8 @@ export interface ToolbarState {
   setTextColor: (color: string) => void;
   fontSize: number;
   setFontSize: (size: number) => void;
+  fontFamily: string;
+  setFontFamily: (family: string) => void;
   fontWeight: 'normal' | 'bold';
   setFontWeight: (weight: 'normal' | 'bold') => void;
   fontStyle: 'normal' | 'italic';
@@ -67,6 +69,7 @@ export function useToolbar(): ToolbarState {
   const [showTextColorMenu, setShowTextColorMenu] = useState(false);
   const [textColor, setTextColor] = useState('#000000');
   const [fontSize, setFontSize] = useState(16);
+  const [fontFamily, setFontFamily] = useState('Nanum Gothic');
   const [fontWeight, setFontWeight] = useState<'normal' | 'bold'>('normal');
   const [fontStyle, setFontStyle] = useState<'normal' | 'italic'>('normal');
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('left');
@@ -143,6 +146,8 @@ export function useToolbar(): ToolbarState {
     setTextColor,
     fontSize,
     setFontSize,
+    fontFamily,
+    setFontFamily,
     fontWeight,
     setFontWeight,
     fontStyle,

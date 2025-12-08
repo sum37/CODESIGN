@@ -4,6 +4,8 @@ import './Toolbar.css';
 interface TextEditControlsProps {
   fontSize: number;
   onFontSizeChange: (size: number) => void;
+  fontFamily: string;
+  onFontFamilyChange: (family: string) => void;
   textColor: string;
   onTextColorChange: (color: string) => void;
   fontWeight: 'normal' | 'bold';
@@ -20,6 +22,8 @@ interface TextEditControlsProps {
 export function TextEditControls({
   fontSize,
   onFontSizeChange,
+  fontFamily,
+  onFontFamilyChange,
   textColor,
   onTextColorChange,
   fontWeight,
@@ -72,16 +76,29 @@ export function TextEditControls({
       {/* 첫 번째 줄: Font, Size */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <select 
+          value={fontFamily}
+          onChange={(e) => onFontFamilyChange(e.target.value)}
           style={{ 
             padding: '4px 8px', 
             background: '#000000', 
             color: '#ffffff', 
             border: '1px solid rgba(244, 114, 182, 0.2)', 
             borderRadius: '4px', 
-            fontSize: '14px' 
+            fontSize: '14px',
+            cursor: 'pointer',
+            minWidth: '120px'
           }}
         >
-          <option style={{ background: '#000000', color: '#ffffff' }}>Nanum Gothic</option>
+          <option value="Nanum Gothic" style={{ background: '#000000', color: '#ffffff' }}>Nanum Gothic</option>
+          <option value="Arial" style={{ background: '#000000', color: '#ffffff' }}>Arial</option>
+          <option value="Helvetica" style={{ background: '#000000', color: '#ffffff' }}>Helvetica</option>
+          <option value="Times New Roman" style={{ background: '#000000', color: '#ffffff' }}>Times New Roman</option>
+          <option value="Georgia" style={{ background: '#000000', color: '#ffffff' }}>Georgia</option>
+          <option value="Verdana" style={{ background: '#000000', color: '#ffffff' }}>Verdana</option>
+          <option value="Courier New" style={{ background: '#000000', color: '#ffffff' }}>Courier New</option>
+          <option value="sans-serif" style={{ background: '#000000', color: '#ffffff' }}>Sans-serif</option>
+          <option value="serif" style={{ background: '#000000', color: '#ffffff' }}>Serif</option>
+          <option value="monospace" style={{ background: '#000000', color: '#ffffff' }}>Monospace</option>
         </select>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <button 
