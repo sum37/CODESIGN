@@ -300,6 +300,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     drawingMode, 
     drawStartPosition, 
     drawCurrentPosition,
+    zoomLevel,
     onCodeChange, 
     setIsDrawing, 
     setDrawStartPosition, 

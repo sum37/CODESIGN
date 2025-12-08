@@ -10,9 +10,10 @@ interface ToolbarProps {
   onShapeSelect: (shapeType: string) => void;
   onImageSelect: (file: File) => void;
   onFontWeightChange?: (fontWeight: 'normal' | 'bold') => void;
+  onFontStyleChange?: (fontStyle: 'normal' | 'italic') => void;
 }
 
-export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontWeightChange }: ToolbarProps) {
+export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontWeightChange, onFontStyleChange }: ToolbarProps) {
   const toolbar = useToolbar();
   const { drawingMode, selectedElementId } = useCanvasStore();
 
@@ -30,6 +31,17 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontWeightC
     // 선택된 요소가 있으면 실제 코드에 반영
     if (selectedElementId && onFontWeightChange) {
       onFontWeightChange(newWeight);
+    }
+  };
+
+  // fontStyle 토글 핸들러 - 선택된 요소가 있으면 코드 업데이트
+  const handleFontStyleToggle = () => {
+    const newStyle = toolbar.fontStyle === 'italic' ? 'normal' : 'italic';
+    toolbar.setFontStyle(newStyle);
+    
+    // 선택된 요소가 있으면 실제 코드에 반영
+    if (selectedElementId && onFontStyleChange) {
+      onFontStyleChange(newStyle);
     }
   };
 
@@ -58,7 +70,7 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontWeightC
         fontWeight={toolbar.fontWeight}
         onFontWeightToggle={handleFontWeightToggle}
         fontStyle={toolbar.fontStyle}
-        onFontStyleToggle={() => toolbar.setFontStyle(toolbar.fontStyle === 'italic' ? 'normal' : 'italic')}
+        onFontStyleToggle={handleFontStyleToggle}
         textAlign={toolbar.textAlign}
         onTextAlignChange={toolbar.setTextAlign}
         showTextColorMenu={toolbar.showTextColorMenu}

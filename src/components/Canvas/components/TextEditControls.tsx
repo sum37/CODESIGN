@@ -201,7 +201,24 @@ export function TextEditControls({
           B
         </button>
         <button 
-          onClick={onFontStyleToggle}
+          onMouseDown={(e) => {
+            // 편집 모드에서 포커스가 빠지지 않도록 방지
+            e.preventDefault();
+          }}
+          onClick={() => {
+            // 편집 모드인지 확인 (텍스트가 선택되어 있고, contentEditable 요소 내부인지)
+            const selection = window.getSelection();
+            const activeElement = document.activeElement as HTMLElement;
+            
+            if (selection && !selection.isCollapsed && activeElement?.isContentEditable) {
+              // 편집 모드: 선택된 텍스트에 italic 적용
+              document.execCommand('italic', false);
+              console.log('[TextEditControls] execCommand italic 실행');
+            } else {
+              // 선택 모드: 전체 요소의 fontStyle 변경
+              onFontStyleToggle();
+            }
+          }}
           style={{ 
             padding: '4px 12px', 
             background: fontStyle === 'italic' ? '#1f1f1f' : '#000000', 

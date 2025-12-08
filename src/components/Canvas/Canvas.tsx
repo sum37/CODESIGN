@@ -171,6 +171,31 @@ export function Canvas() {
     }
   };
 
+  // fontStyle 변경 핸들러
+  const handleFontStyleChange = (fontStyle: 'normal' | 'italic') => {
+    console.log('[Canvas] fontStyle 변경:', fontStyle, '선택된 요소:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] 선택된 요소 또는 loc 정보가 없음');
+      return;
+    }
+    
+    // 코드에서 해당 요소의 fontStyle 스타일 업데이트
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { style: { fontStyle } },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] fontStyle 변경 완료');
+    }
+  };
+
   return (
     <div className="canvas-container">
       <div className="canvas-header">
@@ -212,6 +237,7 @@ export function Canvas() {
         onShapeSelect={handleShapeSelect}
         onImageSelect={handleImageSelect}
         onFontWeightChange={handleFontWeightChange}
+        onFontStyleChange={handleFontStyleChange}
       />
       <div 
         className="canvas-content-wrapper"
