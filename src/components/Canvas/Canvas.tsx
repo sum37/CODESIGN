@@ -246,6 +246,31 @@ export function Canvas() {
     }
   };
 
+  // textAlign 변경 핸들러
+  const handleTextAlignChange = (textAlign: 'left' | 'center' | 'right') => {
+    console.log('[Canvas] textAlign 변경:', textAlign, '선택된 요소:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] 선택된 요소 또는 loc 정보가 없음');
+      return;
+    }
+    
+    // 코드에서 해당 요소의 textAlign 스타일 업데이트
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { style: { textAlign } },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] textAlign 변경 완료');
+    }
+  };
+
   return (
     <div className="canvas-container">
       <div className="canvas-header">
@@ -290,6 +315,7 @@ export function Canvas() {
         onFontWeightChange={handleFontWeightChange}
         onFontStyleChange={handleFontStyleChange}
         onTextColorChange={handleTextColorChange}
+        onTextAlignChange={handleTextAlignChange}
       />
       <div 
         className="canvas-content-wrapper"

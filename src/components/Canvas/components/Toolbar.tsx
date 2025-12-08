@@ -13,9 +13,10 @@ interface ToolbarProps {
   onFontWeightChange?: (fontWeight: 'normal' | 'bold') => void;
   onFontStyleChange?: (fontStyle: 'normal' | 'italic') => void;
   onTextColorChange?: (color: string) => void;
+  onTextAlignChange?: (textAlign: 'left' | 'center' | 'right') => void;
 }
 
-export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeChange, onFontWeightChange, onFontStyleChange, onTextColorChange }: ToolbarProps) {
+export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeChange, onFontWeightChange, onFontStyleChange, onTextColorChange, onTextAlignChange }: ToolbarProps) {
   const toolbar = useToolbar();
   const { drawingMode, selectedElementId } = useCanvasStore();
 
@@ -67,6 +68,16 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeCha
     }
   };
 
+  // textAlign 변경 핸들러 - 선택된 요소가 있으면 코드 업데이트
+  const handleTextAlignChange = (align: 'left' | 'center' | 'right') => {
+    toolbar.setTextAlign(align);
+    
+    // 선택된 요소가 있으면 실제 코드에 반영
+    if (selectedElementId && onTextAlignChange) {
+      onTextAlignChange(align);
+    }
+  };
+
   return (
     <div className="canvas-toolbar">
       <ToolbarButtonGroup
@@ -94,7 +105,7 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeCha
         fontStyle={toolbar.fontStyle}
         onFontStyleToggle={handleFontStyleToggle}
         textAlign={toolbar.textAlign}
-        onTextAlignChange={toolbar.setTextAlign}
+        onTextAlignChange={handleTextAlignChange}
         showTextColorMenu={toolbar.showTextColorMenu}
         onToggleTextColorMenu={() => toolbar.setShowTextColorMenu(!toolbar.showTextColorMenu)}
         textColorMenuRef={toolbar.textColorMenuRef}
