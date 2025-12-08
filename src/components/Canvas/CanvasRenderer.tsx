@@ -815,8 +815,9 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     let locData = actualElement.getAttribute('data-loc');
     let locElement = actualElement;
     
-    // 텍스트 노드인 경우 (span으로 렌더링됨) 부모 요소의 loc 사용
-    if (!locData || tagName === 'span') {
+    // 자신의 loc이 없는 경우에만 부모 요소의 loc 사용
+    // (textbox 등 자체 loc을 가진 요소는 자신의 loc 유지)
+    if (!locData) {
       const parent = actualElement.parentElement;
       if (parent) {
         const parentLoc = parent.getAttribute('data-loc');
