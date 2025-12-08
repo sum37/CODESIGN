@@ -54,6 +54,10 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
   ) => {
     console.log('[CanvasRenderer] 텍스트 편집 완료:', { elementId, newText, loc });
     
+    // 먼저 편집 모드 종료 (ghost box가 다시 표시되도록)
+    setEditingElementId(null);
+    editingRef.current = null;
+    
     if (!loc) {
       console.warn('[CanvasRenderer] loc 정보가 없어서 코드 업데이트 불가');
       return;
@@ -65,9 +69,6 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       onCodeChange(updatedCode);
       window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
     }
-    
-    setEditingElementId(null);
-    editingRef.current = null;
   }, [code, onCodeChange]);
 
   // 편집 모드에서 외부 클릭 감지 (편집 모드 종료)
@@ -82,6 +83,12 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       
       // 클릭한 대상이 편집 중인 요소 내부인지 확인
       if (editingElement.contains(target)) {
+        return;
+      }
+      
+      // 리본바/툴바 클릭은 무시 (스타일 변경 가능하도록)
+      const isToolbarClick = target.closest('.canvas-toolbar');
+      if (isToolbarClick) {
         return;
       }
       
@@ -718,6 +725,12 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       const clickedElement = target.closest('[data-element-id]');
       if (clickedElement && clickedElement.getAttribute('data-element-id') === selectedElementId) {
         return; // 선택된 요소를 클릭한 경우는 무시
+      }
+      
+      // 리본바/툴바 클릭은 무시 (선택된 요소의 속성 변경 가능하도록)
+      const isToolbarClick = target.closest('.canvas-toolbar');
+      if (isToolbarClick) {
+        return; // 툴바를 클릭한 경우는 무시
       }
 
       // 외부를 클릭한 경우 선택 해제
@@ -1610,7 +1623,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
             handleTextDoubleClick(e, elementId, e.currentTarget);
           }}
           onBlur={(e) => {
-            if (isEditing && node.loc) {
+            if (isEditing) {
               const newText = e.currentTarget.textContent || '';
               e.currentTarget.contentEditable = 'false';
               e.currentTarget.style.outline = isSelected ? '2px solid #007acc' : 'none';
@@ -1888,7 +1901,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
           }
         }}
         onBlur={(e) => {
-          if (isEditing && node.loc) {
+          if (isEditing) {
             const target = e.currentTarget as HTMLElement;
             const newText = target.textContent || '';
             target.contentEditable = 'false';
