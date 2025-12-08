@@ -32,6 +32,20 @@
 .monaco-editor-content {
   flex: 1;
   overflow: hidden;
+  padding-left: 0;
+}
+
+/* Monaco Editor 내부 컨테이너 패딩 제거 */
+.monaco-editor-content .monaco-editor {
+  padding-left: 0 !important;
+}
+
+.monaco-editor-content .monaco-editor .monaco-scrollable-element {
+  padding-left: 0 !important;
+}
+
+.monaco-editor-content .monaco-editor .view-lines {
+  padding-left: 0 !important;
 }
 
 /* Monaco Editor 텍스트 색상 강조 */

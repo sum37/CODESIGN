@@ -72,6 +72,10 @@ export async function loadImportedComponent(
   try {
     const resolvedPath = await resolveImportPath(importPath, currentFile);
     if (!resolvedPath) {
+      // 외부 라이브러리는 경고 없이 null 반환
+      if (!importPath.startsWith('./') && !importPath.startsWith('../') && !importPath.startsWith('@/')) {
+        return null;
+      }
       console.warn(`Import 경로를 해석할 수 없습니다: ${importPath}`);
       return null;
     }

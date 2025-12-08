@@ -323,7 +323,10 @@ function parseJSXElement(node: t.JSXElement, importedComponents?: Map<string, Co
     // 현재 props 추가 (우선순위 높음)
     Object.entries(props).forEach(([key, value]) => {
       if (key === 'style') {
-        // style은 이미 처리됨
+        // style 객체는 그대로 저장 (도형의 스타일 등)
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          mergedProps[key] = value;
+        }
       } else if (typeof value === 'string' && value.startsWith('__VAR__')) {
         // 변수 참조는 제외 (런타임 값이므로 파싱 불가)
         // 하지만 객체 props는 파싱된 객체를 사용
@@ -774,7 +777,10 @@ function parseJSXElement(node: t.JSXElement, importedComponents?: Map<string, Co
   const cleanProps: Record<string, any> = {};
   Object.entries(props).forEach(([key, value]) => {
     if (key === 'style') {
-      // style은 이미 처리됨
+      // style 객체는 그대로 저장 (도형의 스타일 등)
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        cleanProps[key] = value;
+      }
     } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
       cleanProps[key] = value;
     } else if (value === null || value === undefined) {

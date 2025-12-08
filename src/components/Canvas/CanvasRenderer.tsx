@@ -43,6 +43,30 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     return newId;
   };
 
+  // 도형이 렌더링되었는지 확인
+  useEffect(() => {
+    if (reactRootRef.current) {
+      const shapes = reactRootRef.current.querySelectorAll('[id^="shape-"]');
+      console.log('DOM에서 발견된 도형 개수:', shapes.length);
+      shapes.forEach((shape, idx) => {
+        const element = shape as HTMLElement;
+        const computedStyle = window.getComputedStyle(element);
+        console.log(`도형 ${idx + 1} (${element.id}):`, {
+          position: computedStyle.position,
+          left: computedStyle.left,
+          top: computedStyle.top,
+          width: computedStyle.width,
+          height: computedStyle.height,
+          backgroundColor: computedStyle.backgroundColor,
+          zIndex: computedStyle.zIndex,
+          display: computedStyle.display,
+          visibility: computedStyle.visibility,
+          opacity: computedStyle.opacity,
+        });
+      });
+    }
+  }, [componentTree]);
+
   useEffect(() => {
     const parseWithImports = async () => {
       try {
@@ -54,7 +78,33 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         
         // Import된 컴포넌트 로드
         if (selectedFile && imports.length > 0) {
+          // 외부 라이브러리 목록 (로드하지 않음)
+          const externalLibraries = [
+            'react',
+            'react-dom',
+            'react-dom/client',
+            '@tauri-apps/api',
+            '@tauri-apps/plugin-shell',
+            '@monaco-editor/react',
+            'recast',
+            '@babel/parser',
+            '@babel/traverse',
+            '@babel/types',
+          ];
+          
           for (const importInfo of imports) {
+            // 외부 라이브러리는 스킵
+            if (externalLibraries.some(lib => importInfo.source === lib || importInfo.source.startsWith(lib + '/'))) {
+              console.log(`외부 라이브러리 스킵: ${importInfo.source}`);
+              continue;
+            }
+            
+            // 상대 경로나 @/ 경로만 처리
+            if (!importInfo.source.startsWith('./') && !importInfo.source.startsWith('../') && !importInfo.source.startsWith('@/')) {
+              console.log(`외부 패키지 스킵: ${importInfo.source}`);
+              continue;
+            }
+            
             // Default export 처리
             if (importInfo.default) {
               // Default export의 로컬 이름 사용 (예: import Profile from ... -> Profile)
@@ -660,10 +710,21 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     }
 
     // 편집 가능한 요소 목록
-    const editableTags = ['div', 'section', 'header', 'footer', 'main', 'nav', 'aside', 'article', 'button', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span'];
+    const editableTags = ['div', 'section', 'header', 'footer', 'main', 'nav', 'aside', 'article', 'button', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'svg'];
 
     // 일관된 ID 생성
     const elementId = generateElementId(node, depth, path);
+    
+    // 도형인지 확인 (id가 shape-로 시작하는 경우)
+    const isShape = node.props?.id && typeof node.props.id === 'string' && node.props.id.startsWith('shape-');
+    if (isShape) {
+      console.log('도형 렌더링 시도:', {
+        id: node.props.id,
+        type: node.type,
+        style: node.props?.style,
+        elementId,
+      });
+    }
     
     // data-element-id 속성 추가 (ghost box 매핑용)
     const dataElementId = elementId;
@@ -679,15 +740,25 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       ...(node.props?.style || {}),
     };
 
+    // 도형의 경우 스타일 확인
+    if (isShape) {
+      console.log('도형 baseStyle:', baseStyle);
+    }
+
     // 루트 요소는 relative positioning, 자식은 relative (레이아웃 유지)
-    const positioningStyle: React.CSSProperties = isRoot
-      ? {
-          position: 'relative',
-          width: '100%',
-        }
-      : {
-          position: 'relative',
-        };
+    // 단, baseStyle에 이미 position이 있으면 그것을 우선 사용 (도형 등)
+    const positioningStyle: React.CSSProperties = {};
+    if (!baseStyle.position) {
+      // position이 명시적으로 설정되지 않은 경우에만 relative 설정
+      if (isRoot) {
+        positioningStyle.position = 'relative';
+        positioningStyle.width = '100%';
+      } else {
+        positioningStyle.position = 'relative';
+      }
+    } else if (isShape) {
+      console.log('도형 position 유지:', baseStyle.position);
+    }
 
     const isSelected = selectedElementId === elementId;
     
@@ -865,6 +936,14 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         }
       });
     }
+
+    // 도형의 최종 스타일 확인 (cleanProps 정의 후)
+    if (isShape) {
+      console.log('도형 finalStyle:', finalStyle);
+      console.log('도형 cleanProps:', cleanProps);
+      console.log('도형 node:', node);
+      console.log('도형이 렌더링됩니다!');
+    }
     
     // Space 처리: space-y-* 또는 space-x-* 클래스 확인
     const spaceY = (tailwindStyles as any).__spaceY__;
@@ -948,6 +1027,17 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     // 편집 가능한 요소인지 확인 (header, section 등)
     const isEditable = editableTags.includes(node.type.toLowerCase());
     
+    // 도형 렌더링 확인
+    if (isShape) {
+      console.log('도형 JSX 렌더링:', {
+        ElementTag,
+        elementId,
+        finalStyle,
+        cleanProps,
+        hasChildren: !!node.children && node.children.length > 0,
+      });
+    }
+
     return (
       <ElementTag
         key={elementId}
