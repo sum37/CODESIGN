@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ColorPicker } from './ColorPicker';
 import './Toolbar.css';
 
 interface TextEditControlsProps {
@@ -184,23 +185,19 @@ export function TextEditControls({
             <div 
               style={{ 
                 position: 'absolute', 
-                bottom: '100%', 
+                top: '100%', 
                 left: 0, 
-                marginBottom: '4px', 
+                marginTop: '4px', 
                 background: '#000000', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)', 
-                zIndex: 1000, 
-                padding: '12px' 
+                zIndex: 1000,
               }}
-              onClick={(e) => e.stopPropagation()}
             >
-              <input
-                type="color"
-                value={textColor}
-                onChange={(e) => {
-                  const newColor = e.target.value;
+              <ColorPicker
+                color={textColor}
+                onChange={(newColor) => {
                   // 편집 모드인지 확인
                   const selection = window.getSelection();
                   const activeElement = document.activeElement as HTMLElement;
@@ -213,15 +210,7 @@ export function TextEditControls({
                   // 항상 toolbar 상태 업데이트 및 선택된 요소에 반영
                   onTextColorChange(newColor);
                 }}
-                onClick={(e) => e.stopPropagation()}
-                style={{ 
-                  height: '128px', 
-                  width: '100%', 
-                  cursor: 'pointer',
-                  border: 'none',
-                  outline: 'none',
-                  background: 'transparent'
-                }}
+                onClose={onToggleTextColorMenu}
               />
             </div>
           )}

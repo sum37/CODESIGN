@@ -1,4 +1,5 @@
 import React from 'react';
+import { ColorPicker } from './ColorPicker';
 import './Toolbar.css';
 
 interface ShapeEditControlsProps {
@@ -120,22 +121,13 @@ export function ShapeEditControls({
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)', 
-                zIndex: 1000, 
-                padding: '12px' 
+                zIndex: 1000,
               }}
             >
-              <input
-                type="color"
-                value={shapeColor}
-                onChange={(e) => onShapeColorChange(e.target.value)}
-                style={{ 
-                  height: '128px', 
-                  width: '100%', 
-                  cursor: 'pointer',
-                  border: 'none',
-                  outline: 'none',
-                  background: 'transparent'
-                }}
+              <ColorPicker
+                color={shapeColor}
+                onChange={onShapeColorChange}
+                onClose={onToggleShapeColorMenu}
               />
             </div>
           )}
@@ -577,5 +569,7 @@ export function ShapeEditControls({
     </div>
   );
 }
+
+
 
 
