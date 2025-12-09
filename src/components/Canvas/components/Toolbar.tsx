@@ -15,9 +15,10 @@ interface ToolbarProps {
   onFontStyleChange?: (fontStyle: 'normal' | 'italic') => void;
   onTextColorChange?: (color: string) => void;
   onTextAlignChange?: (textAlign: 'left' | 'center' | 'right') => void;
+  onShapeColorChange?: (color: string) => void;
 }
 
-export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeChange, onFontFamilyChange, onFontWeightChange, onFontStyleChange, onTextColorChange, onTextAlignChange }: ToolbarProps) {
+export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeChange, onFontFamilyChange, onFontWeightChange, onFontStyleChange, onTextColorChange, onTextAlignChange, onShapeColorChange }: ToolbarProps) {
   const toolbar = useToolbar();
   const { drawingMode, selectedElementId } = useCanvasStore();
 
@@ -89,6 +90,16 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeCha
     }
   };
 
+  // shapeColor 변경 핸들러 - 선택된 요소가 있으면 코드 업데이트
+  const handleShapeColorChange = (color: string) => {
+    toolbar.setShapeColor(color);
+    
+    // 선택된 요소가 있으면 실제 코드에 반영
+    if (selectedElementId && onShapeColorChange) {
+      onShapeColorChange(color);
+    }
+  };
+
   return (
     <div className="canvas-toolbar">
       <ToolbarButtonGroup
@@ -130,7 +141,7 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeCha
       {/* 도형 편집 컨트롤 */}
       <ShapeEditControls
         shapeColor={toolbar.shapeColor}
-        onShapeColorChange={toolbar.setShapeColor}
+        onShapeColorChange={handleShapeColorChange}
         shapeBorderRadius={toolbar.shapeBorderRadius}
         onShapeBorderRadiusChange={toolbar.setShapeBorderRadius}
         borderRadiusInputValue={toolbar.borderRadiusInputValue}

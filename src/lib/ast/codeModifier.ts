@@ -849,6 +849,72 @@ export function updateTextInCode(
 }
 
 /**
+ * SVG 요소의 fill 색상 변경
+ * @param code - 원본 코드
+ * @param loc - 요소의 AST 위치 정보
+ * @param newColor - 새로운 색상
+ */
+export function updateSvgFillColor(
+  code: string,
+  loc: SourceLocation,
+  newColor: string
+): string {
+  console.log('[codeModifier] updateSvgFillColor 호출:', { loc, newColor });
+  
+  const lines = code.split('\n');
+  const targetLine = loc.start.line - 1; // 0-indexed
+  const endLine = loc.end.line - 1;
+  
+  if (targetLine < 0 || targetLine >= lines.length) {
+    console.warn('[codeModifier] 유효하지 않은 라인 번호:', loc.start.line);
+    return code;
+  }
+  
+  // 요소의 시작/끝 문자 인덱스 계산
+  let startCharIndex = 0;
+  for (let i = 0; i < targetLine; i++) {
+    startCharIndex += lines[i].length + 1;
+  }
+  startCharIndex += loc.start.column;
+  
+  let endCharIndex = 0;
+  for (let i = 0; i < endLine; i++) {
+    endCharIndex += lines[i].length + 1;
+  }
+  endCharIndex += loc.end.column;
+  
+  // SVG 요소 전체 내용 추출
+  const svgContent = code.substring(startCharIndex, endCharIndex);
+  console.log('[codeModifier] SVG 요소 내용:', svgContent.substring(0, 200));
+  
+  // fill 속성 찾아서 변경 (fill="..." 또는 fill='...')
+  let updatedContent = svgContent;
+  
+  // fill="..." 패턴
+  const fillPattern = /fill="[^"]*"/g;
+  if (fillPattern.test(svgContent)) {
+    updatedContent = svgContent.replace(fillPattern, `fill="${newColor}"`);
+  } else {
+    // fill='...' 패턴
+    const fillPatternSingle = /fill='[^']*'/g;
+    if (fillPatternSingle.test(svgContent)) {
+      updatedContent = svgContent.replace(fillPatternSingle, `fill="${newColor}"`);
+    }
+  }
+  
+  if (updatedContent === svgContent) {
+    console.warn('[codeModifier] fill 속성을 찾을 수 없음');
+    return code;
+  }
+  
+  // 코드 교체
+  const result = code.substring(0, startCharIndex) + updatedContent + code.substring(endCharIndex);
+  console.log('[codeModifier] SVG fill 변경 완료');
+  
+  return result;
+}
+
+/**
  * 요소를 코드에서 삭제
  * @param code - 원본 코드
  * @param loc - 요소의 AST 위치 정보

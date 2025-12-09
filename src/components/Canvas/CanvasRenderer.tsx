@@ -563,6 +563,12 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       return node.id;
     }
     
+    // props.id가 있으면 사용 (도형, 텍스트박스 등 동적으로 생성된 요소)
+    if (node.props?.id && typeof node.props.id === 'string') {
+      elementIdMapRef.current.set(node, node.props.id);
+      return node.props.id;
+    }
+    
     // 경로 기반 ID 생성 (일관성 유지)
     const pathString = path.length > 0 ? path.join('-') : 'root';
     const typePrefix = node.type.substring(0, 3).toLowerCase();
@@ -1688,6 +1694,10 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     const voidElements = ['input', 'img', 'br', 'hr', 'meta', 'link', 'area', 'base', 'col', 'embed', 'source', 'track', 'wbr', 'polygon', 'circle', 'rect', 'line', 'path', 'ellipse', 'polyline'];
     const isVoidElement = voidElements.includes(node.type);
     
+    // SVG 자식 요소인지 확인 (polygon, circle 등 - 클릭 시 부모 SVG 선택)
+    const svgChildElements = ['polygon', 'circle', 'rect', 'line', 'path', 'ellipse', 'polyline'];
+    const isSvgChildElement = svgChildElements.includes(node.type);
+    
     // 특수 요소들 (특별한 처리가 필요한 요소들)
     const specialElements = ['option', 'textarea', 'select'];
     const isSpecialElement = specialElements.includes(node.type);
@@ -1716,6 +1726,35 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       
       // 편집 가능한 요소인지 확인
       const isEditable = editableTags.includes(node.type.toLowerCase());
+      
+      // SVG 자식 요소는 클릭 이벤트를 부모 SVG로 전파하여 부모가 선택되도록 함
+      if (isSvgChildElement) {
+        return (
+          <ElementTag
+            key={elementId}
+            data-element-id={dataElementId}
+            data-loc={dataLoc}
+            style={{ ...finalStyle, cursor: 'pointer' }}
+            className={node.props?.className}
+            onClick={(e) => {
+              // SVG 자식 요소 클릭 시 부모 SVG 요소 찾아서 선택
+              const target = e.currentTarget as Element;
+              const parentSvg = target.closest('svg[data-element-id]');
+              if (parentSvg) {
+                e.stopPropagation();
+                const parentId = parentSvg.getAttribute('data-element-id');
+                const parentLoc = parentSvg.getAttribute('data-loc');
+                console.log('SVG 자식 요소 클릭 → 부모 SVG 선택:', parentId);
+                if (parentId) {
+                  setSelectedElementId(parentId);
+                  setSelectedElementLoc(safeParseLocJson(parentLoc));
+                }
+              }
+            }}
+            {...cleanProps}
+          />
+        );
+      }
       
       return (
         <ElementTag
