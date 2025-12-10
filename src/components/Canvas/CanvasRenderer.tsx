@@ -46,6 +46,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     setDrawStartPosition,
     drawCurrentPosition,
     setDrawCurrentPosition,
+    getNextZIndex,
   } = useCanvasStore();
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   const editingRef = useRef<HTMLElement | null>(null);
@@ -261,6 +262,10 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     const currentCode = codeRef.current;
     
     // 코드에 새 요소 삽입 (텍스트 박스 또는 도형)
+    // getNextZIndex를 사용하여 순차적으로 증가하는 z-index 할당
+    const newZIndex = getNextZIndex();
+    console.log('[CanvasRenderer] 새 요소 z-index:', newZIndex);
+    
     let updatedCode: string;
     if (drawingMode === 'textbox') {
       updatedCode = insertTextBoxInCode(currentCode, {
@@ -268,14 +273,14 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         y: Math.round(y),
         width: Math.round(width),
         height: Math.round(height),
-      });
+      }, newZIndex);
     } else {
       updatedCode = insertShapeInCode(currentCode, drawingMode, {
         x: Math.round(x),
         y: Math.round(y),
         width: Math.round(width),
         height: Math.round(height),
-      });
+      }, newZIndex);
     }
     
     console.log('[CanvasRenderer] 코드 변경 여부:', updatedCode !== currentCode);

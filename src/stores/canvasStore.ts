@@ -36,6 +36,10 @@ interface CanvasState {
   setDrawStartPosition: (position: { x: number; y: number } | null) => void;
   drawCurrentPosition: { x: number; y: number } | null;
   setDrawCurrentPosition: (position: { x: number; y: number } | null) => void;
+  
+  // z-index 관리 (도형, 텍스트박스 통합)
+  nextZIndex: number;
+  getNextZIndex: () => number;
 }
 
 export const useCanvasStore = create<CanvasState>((set) => ({
@@ -64,5 +68,16 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   setDrawStartPosition: (position) => set({ drawStartPosition: position }),
   drawCurrentPosition: null,
   setDrawCurrentPosition: (position) => set({ drawCurrentPosition: position }),
+  
+  // z-index 관리 (도형, 텍스트박스 통합) - 100부터 시작
+  nextZIndex: 100,
+  getNextZIndex: () => {
+    let currentZIndex = 100;
+    set((state) => {
+      currentZIndex = state.nextZIndex;
+      return { nextZIndex: state.nextZIndex + 1 };
+    });
+    return currentZIndex;
+  },
 }));
 

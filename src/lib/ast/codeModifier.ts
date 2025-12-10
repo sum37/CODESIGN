@@ -424,16 +424,18 @@ function updateObjectExpression(node: t.ObjectExpression, updates: Record<string
  * @param code - 원본 코드
  * @param shapeType - 도형 타입
  * @param bounds - 도형의 위치와 크기
+ * @param zIndex - z-index 값 (기본값: 100)
  */
 export function insertShapeInCode(
   code: string,
   shapeType: string,
-  bounds: { x: number; y: number; width: number; height: number }
+  bounds: { x: number; y: number; width: number; height: number },
+  zIndex: number = 100
 ): string {
-  console.log('[codeModifier] insertShapeInCode 호출:', { shapeType, bounds });
+  console.log('[codeModifier] insertShapeInCode 호출:', { shapeType, bounds, zIndex });
   
   // 도형 타입에 따른 JSX 생성
-  const shapeJSX = generateShapeJSX(shapeType, bounds);
+  const shapeJSX = generateShapeJSX(shapeType, bounds, zIndex);
   
   if (!shapeJSX) {
     console.warn('[codeModifier] 도형 JSX 생성 실패');
@@ -600,7 +602,8 @@ function findOpeningTagEnd(code: string): number {
  */
 function generateShapeJSX(
   shapeType: string,
-  bounds: { x: number; y: number; width: number; height: number }
+  bounds: { x: number; y: number; width: number; height: number },
+  zIndex: number = 100
 ): string | null {
   const { x, y, width, height } = bounds;
   
@@ -608,7 +611,7 @@ function generateShapeJSX(
   const shapeId = `shape-${Date.now()}`;
   
   // 기본 스타일 - non-self-closing div로 생성
-  const baseStyle = `position: "absolute", left: "${x}px", top: "${y}px", width: "${width}px", height: "${height}px", zIndex: 100`;
+  const baseStyle = `position: "absolute", left: "${x}px", top: "${y}px", width: "${width}px", height: "${height}px", zIndex: ${zIndex}`;
   
   switch (shapeType) {
     case 'rectangle':
@@ -623,33 +626,33 @@ function generateShapeJSX(
     case 'circle':
       // 원은 가로/세로 중 작은 값으로 정사각형으로 만듦
       const circleSize = Math.min(width, height);
-      return `<div id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", width: "${circleSize}px", height: "${circleSize}px", backgroundColor: "#f9a8d4", borderRadius: "50%", zIndex: 100}}></div>`;
+      return `<div id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", width: "${circleSize}px", height: "${circleSize}px", backgroundColor: "#f9a8d4", borderRadius: "50%", zIndex: ${zIndex}}}></div>`;
     
     case 'ellipse':
       return `<div id="${shapeId}" style={{${baseStyle}, backgroundColor: "#f9a8d4", borderRadius: "50%"}}></div>`;
     
     case 'triangle':
-      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: ${zIndex}}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
         <polygon points="50,0 100,100 0,100" fill="#f9a8d4" />
       </svg>`;
     
     case 'diamond':
-      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: ${zIndex}}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
         <polygon points="50,0 100,50 50,100 0,50" fill="#f9a8d4" />
       </svg>`;
     
     case 'star':
-      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: ${zIndex}}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
         <polygon points="50,0 61,35 98,35 68,57 79,91 50,70 21,91 32,57 2,35 39,35" fill="#f9a8d4" />
       </svg>`;
     
     case 'pentagon':
-      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: ${zIndex}}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
         <polygon points="50,0 100,38 81,100 19,100 0,38" fill="#f9a8d4" />
       </svg>`;
     
     case 'hexagon':
-      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: ${zIndex}}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
         <polygon points="50,0 93,25 93,75 50,100 7,75 7,25" fill="#f9a8d4" />
       </svg>`;
     
@@ -663,18 +666,20 @@ function generateShapeJSX(
  * 텍스트 박스를 코드에 삽입
  * @param code - 원본 코드
  * @param bounds - 텍스트 박스의 위치와 크기
+ * @param zIndex - z-index 값 (기본값: 100)
  */
 export function insertTextBoxInCode(
   code: string,
-  bounds: { x: number; y: number; width: number; height: number }
+  bounds: { x: number; y: number; width: number; height: number },
+  zIndex: number = 100
 ): string {
-  console.log('[codeModifier] insertTextBoxInCode 호출:', { bounds });
+  console.log('[codeModifier] insertTextBoxInCode 호출:', { bounds, zIndex });
   
   const { x, y, width, height } = bounds;
   const textBoxId = `textbox-${Date.now()}`;
   
   // 텍스트 박스 JSX 생성 (p 태그 사용)
-  const textBoxJSX = `<p id="${textBoxId}" style={{position: "absolute", left: "${x}px", top: "${y}px", fontSize: "16px", color: "#333333", zIndex: 100, cursor: "text", margin: 0}}>텍스트를 입력하세요</p>`;
+  const textBoxJSX = `<p id="${textBoxId}" style={{position: "absolute", left: "${x}px", top: "${y}px", fontSize: "16px", color: "#333333", zIndex: ${zIndex}, cursor: "text", margin: 0}}>텍스트를 입력하세요</p>`;
   
   // return 문 찾기 (insertShapeInCode와 동일한 로직)
   let insertIndex = -1;
