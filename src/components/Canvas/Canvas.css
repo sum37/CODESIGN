@@ -90,13 +90,19 @@
   overflow: auto;
   background: #f5f5f5;
   position: relative;
-  /* 줌된 콘텐츠를 중앙 정렬 */
+  /* 줌 아웃 시 전체가 보이도록 */
+  min-height: 0;
+}
+
+/* 스크롤 영역 내부 컨테이너 - 배경이 전체 콘텐츠를 커버 */
+.canvas-content-inner {
   display: flex;
   justify-content: center;
   align-items: flex-start;
   padding: 20px;
-  /* 줌 아웃 시 전체가 보이도록 */
-  min-height: 0;
+  min-width: max-content;
+  min-height: 100%;
+  background: #f5f5f5;
 }
 
 .canvas-content {
@@ -125,14 +131,24 @@
   font-size: 14px;
 }
 
+/* 툴바 래퍼 스타일 - 스크롤 가능한 컨테이너 */
+.canvas-toolbar-wrapper {
+  background: #000000;
+  border-bottom: 1px solid rgba(244, 114, 182, 0.3);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+
 /* 툴바 스타일 */
 .canvas-toolbar {
   background: #000000;
-  border-bottom: 1px solid rgba(244, 114, 182, 0.3);
   padding: 12px 16px; /* py-3 px-4 */
   display: flex;
   align-items: center;
   gap: 16px; /* gap-4 */
+  min-width: max-content; /* 내용에 맞게 너비 확장 */
+  width: max-content; /* 배경이 전체 내용을 커버 */
 }
 
 .canvas-toolbar-group {
