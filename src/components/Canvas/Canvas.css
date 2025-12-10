@@ -209,10 +209,6 @@
 
 /* 도형 메뉴 스타일 */
 .canvas-shape-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 4px;
   background: #000000;
   border: 1px solid rgba(244, 114, 182, 0.2);
   border-radius: 4px;

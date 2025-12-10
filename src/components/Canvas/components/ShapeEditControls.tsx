@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ColorPicker } from './ColorPicker';
 import './Toolbar.css';
 
@@ -95,6 +95,48 @@ export function ShapeEditControls({
   opacity,
   onOpacityChange,
 }: ShapeEditControlsProps) {
+  // 각 메뉴의 fixed position 계산
+  const [shapeColorMenuPosition, setShapeColorMenuPosition] = useState({ top: 0, left: 0 });
+  const [effectsMenuPosition, setEffectsMenuPosition] = useState({ top: 0, left: 0 });
+  const [strokeMenuPosition, setStrokeMenuPosition] = useState({ top: 0, left: 0 });
+  const [bringForwardMenuPosition, setBringForwardMenuPosition] = useState({ top: 0, left: 0 });
+  const [sendBackwardMenuPosition, setSendBackwardMenuPosition] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (showShapeColorMenu && shapeColorMenuRef?.current) {
+      const rect = shapeColorMenuRef.current.getBoundingClientRect();
+      setShapeColorMenuPosition({ top: rect.bottom + 4, left: rect.left });
+    }
+  }, [showShapeColorMenu]);
+
+  useEffect(() => {
+    if (showEffectsMenu && effectsMenuRef?.current) {
+      const rect = effectsMenuRef.current.getBoundingClientRect();
+      setEffectsMenuPosition({ top: rect.bottom + 4, left: rect.left });
+    }
+  }, [showEffectsMenu]);
+
+  useEffect(() => {
+    if (showStrokeMenu && strokeMenuRef?.current) {
+      const rect = strokeMenuRef.current.getBoundingClientRect();
+      setStrokeMenuPosition({ top: rect.bottom + 4, left: rect.left });
+    }
+  }, [showStrokeMenu]);
+
+  useEffect(() => {
+    if (showBringForwardMenu && bringForwardMenuRef?.current) {
+      const rect = bringForwardMenuRef.current.getBoundingClientRect();
+      setBringForwardMenuPosition({ top: rect.bottom + 4, left: rect.left });
+    }
+  }, [showBringForwardMenu]);
+
+  useEffect(() => {
+    if (showSendBackwardMenu && sendBackwardMenuRef?.current) {
+      const rect = sendBackwardMenuRef.current.getBoundingClientRect();
+      setSendBackwardMenuPosition({ top: rect.bottom + 4, left: rect.left });
+    }
+  }, [showSendBackwardMenu]);
+
   const buttonStyle = {
     padding: '4px 12px',
     background: '#000000',
@@ -158,10 +200,9 @@ export function ShapeEditControls({
           {showShapeColorMenu && (
             <div 
               style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                marginTop: '4px', 
+                position: 'fixed', 
+                top: shapeColorMenuPosition.top, 
+                left: shapeColorMenuPosition.left, 
                 background: '#000000', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
@@ -193,10 +234,9 @@ export function ShapeEditControls({
           {showEffectsMenu && (
             <div 
               style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                marginTop: '4px', 
+                position: 'fixed', 
+                top: effectsMenuPosition.top, 
+                left: effectsMenuPosition.left, 
                 background: '#000000', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
@@ -417,10 +457,9 @@ export function ShapeEditControls({
           {showStrokeMenu && (
             <div 
               style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                marginTop: '4px', 
+                position: 'fixed', 
+                top: strokeMenuPosition.top, 
+                left: strokeMenuPosition.left, 
                 background: '#000000', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
@@ -494,62 +533,58 @@ export function ShapeEditControls({
         <div 
           style={{ 
             display: 'flex', 
-            flexDirection: 'column', 
+            alignItems: 'center', 
             gap: '8px',
             opacity: isBorderRadiusEnabled ? 1 : 0.4,
             pointerEvents: isBorderRadiusEnabled ? 'auto' : 'none',
           }}
           title={isBorderRadiusEnabled ? '' : '둥근 사각형을 선택하세요'}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px', color: isBorderRadiusEnabled ? '#ffffff' : '#666666' }}>Corner Radius:</span>
-            <input
-              ref={borderRadiusInputRef}
-              type="text"
-              value={borderRadiusInputValue}
-              onChange={handleBorderRadiusInputChange}
-              onBlur={() => handleBorderRadiusBlur()}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-                if (e.key === 'Enter') {
-                  handleBorderRadiusBlur();
-                }
-              }}
-              disabled={!isBorderRadiusEnabled}
-              style={{ 
-                width: '64px', 
-                padding: '4px 8px', 
-                background: isBorderRadiusEnabled ? '#000000' : '#1a1a1a', 
-                border: '1px solid rgba(244, 114, 182, 0.2)', 
-                borderRadius: '4px', 
-                fontSize: '14px',
-                color: isBorderRadiusEnabled ? '#ffffff' : '#666666',
-                cursor: isBorderRadiusEnabled ? 'text' : 'not-allowed',
-              }}
-            />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <input
-              type="range"
-              min="0"
-              max={maxBorderRadius}
-              value={Math.min(shapeBorderRadius, maxBorderRadius)}
-              onChange={(e) => {
-                const newRadius = Math.min(Number(e.target.value), maxBorderRadius);
-                onShapeBorderRadiusChange(newRadius);
-                onBorderRadiusInputChange(newRadius.toString());
-              }}
-              disabled={!isBorderRadiusEnabled}
-              style={{ 
-                flex: 1, 
-                height: '8px', 
-                background: '#1f1f1f', 
-                borderRadius: '4px', 
-                outline: 'none',
-                cursor: isBorderRadiusEnabled ? 'pointer' : 'not-allowed',
-              }}
-            />
-          </div>
+          <span style={{ fontSize: '14px', color: isBorderRadiusEnabled ? '#ffffff' : '#666666', whiteSpace: 'nowrap' }}>Corner Radius:</span>
+          <input
+            ref={borderRadiusInputRef}
+            type="text"
+            value={borderRadiusInputValue}
+            onChange={handleBorderRadiusInputChange}
+            onBlur={() => handleBorderRadiusBlur()}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === 'Enter') {
+                handleBorderRadiusBlur();
+              }
+            }}
+            disabled={!isBorderRadiusEnabled}
+            style={{ 
+              width: '50px', 
+              padding: '4px 8px', 
+              background: isBorderRadiusEnabled ? '#000000' : '#1a1a1a', 
+              border: '1px solid rgba(244, 114, 182, 0.2)', 
+              borderRadius: '4px', 
+              fontSize: '14px',
+              color: isBorderRadiusEnabled ? '#ffffff' : '#666666',
+              cursor: isBorderRadiusEnabled ? 'text' : 'not-allowed',
+            }}
+          />
+          <input
+            type="range"
+            min="0"
+            max={maxBorderRadius}
+            value={Math.min(shapeBorderRadius, maxBorderRadius)}
+            onChange={(e) => {
+              const newRadius = Math.min(Number(e.target.value), maxBorderRadius);
+              onShapeBorderRadiusChange(newRadius);
+              onBorderRadiusInputChange(newRadius.toString());
+            }}
+            disabled={!isBorderRadiusEnabled}
+            style={{ 
+              width: '80px', 
+              height: '8px', 
+              background: '#1f1f1f', 
+              borderRadius: '4px', 
+              outline: 'none',
+              cursor: isBorderRadiusEnabled ? 'pointer' : 'not-allowed',
+            }}
+          />
         </div>
       </div>
       
@@ -575,10 +610,9 @@ export function ShapeEditControls({
           {showBringForwardMenu && (
             <div 
               style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                marginTop: '4px', 
+                position: 'fixed', 
+                top: bringForwardMenuPosition.top, 
+                left: bringForwardMenuPosition.left, 
                 background: '#000000', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
@@ -646,10 +680,9 @@ export function ShapeEditControls({
           {showSendBackwardMenu && (
             <div 
               style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                marginTop: '4px', 
+                position: 'fixed', 
+                top: sendBackwardMenuPosition.top, 
+                left: sendBackwardMenuPosition.left, 
                 background: '#000000', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 

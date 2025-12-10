@@ -59,6 +59,7 @@ export function ToolbarButtonGroup({
         <ShapeMenu
           showShapeMenu={showShapeMenu}
           onShapeSelect={onShapeSelect}
+          buttonRef={menuRef}
         />
       </div>
 
