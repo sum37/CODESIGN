@@ -48,6 +48,11 @@ interface CanvasState {
   // z-index 관리 (도형, 텍스트박스 통합)
   nextZIndex: number;
   getNextZIndex: () => number;
+  
+  // 요소별 잠금 상태 관리
+  elementLocks: Record<string, boolean>;
+  setElementLock: (elementId: string, locked: boolean) => void;
+  isElementLocked: (elementId: string) => boolean;
 }
 
 export const useCanvasStore = create<CanvasState>((set) => ({
@@ -94,6 +99,20 @@ export const useCanvasStore = create<CanvasState>((set) => ({
       return { nextZIndex: state.nextZIndex + 1 };
     });
     return currentZIndex;
+  },
+  
+  // 요소별 잠금 상태 관리
+  elementLocks: {},
+  setElementLock: (elementId, locked) =>
+    set((state) => ({
+      elementLocks: {
+        ...state.elementLocks,
+        [elementId]: locked,
+      },
+    })),
+  isElementLocked: (elementId) => {
+    const state = useCanvasStore.getState();
+    return state.elementLocks[elementId] || false;
   },
 }));
 

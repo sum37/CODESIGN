@@ -31,6 +31,24 @@ interface ShapeEditControlsProps {
   borderRadiusInputRef: React.RefObject<HTMLInputElement>;
   isBorderRadiusEnabled?: boolean;
   maxBorderRadius?: number;
+  
+  // 잠금 기능
+  isLocked: boolean;
+  onToggleLock: () => void;
+  
+  // Effects 기능
+  shadowType: 'none' | 'outer' | 'inner';
+  onShadowTypeChange: (type: 'none' | 'outer' | 'inner') => void;
+  shadowColor: string;
+  onShadowColorChange: (color: string) => void;
+  shadowBlur: number;
+  onShadowBlurChange: (blur: number) => void;
+  shadowOffsetX: number;
+  onShadowOffsetXChange: (offset: number) => void;
+  shadowOffsetY: number;
+  onShadowOffsetYChange: (offset: number) => void;
+  opacity: number;
+  onOpacityChange: (opacity: number) => void;
 }
 
 export function ShapeEditControls({
@@ -62,6 +80,20 @@ export function ShapeEditControls({
   borderRadiusInputRef,
   isBorderRadiusEnabled = false,
   maxBorderRadius = 100,
+  isLocked,
+  onToggleLock,
+  shadowType,
+  onShadowTypeChange,
+  shadowColor,
+  onShadowColorChange,
+  shadowBlur,
+  onShadowBlurChange,
+  shadowOffsetX,
+  onShadowOffsetXChange,
+  shadowOffsetY,
+  onShadowOffsetYChange,
+  opacity,
+  onOpacityChange,
 }: ShapeEditControlsProps) {
   const buttonStyle = {
     padding: '4px 12px',
@@ -177,65 +209,172 @@ export function ShapeEditControls({
                 Shadow Effects
               </div>
               <button
-                onClick={() => onToggleEffectsMenu()}
+                onClick={() => {
+                  onShadowTypeChange('none');
+                }}
                 style={{ 
                   width: '100%', 
                   padding: '8px 12px', 
                   textAlign: 'left', 
                   fontSize: '14px', 
-                  color: '#ffffff',
-                  background: 'transparent',
+                  color: shadowType === 'none' ? '#f9a8d4' : '#ffffff',
+                  background: shadowType === 'none' ? '#1f1f1f' : 'transparent',
                   border: 'none',
                   cursor: 'pointer'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = '#1f1f1f'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                onMouseLeave={(e) => e.currentTarget.style.background = shadowType === 'none' ? '#1f1f1f' : 'transparent'}
               >
                 None
               </button>
               <button
-                onClick={() => onToggleEffectsMenu()}
+                onClick={() => {
+                  onShadowTypeChange('outer');
+                }}
                 style={{ 
                   width: '100%', 
                   padding: '8px 12px', 
                   textAlign: 'left', 
                   fontSize: '14px', 
-                  color: '#ffffff',
-                  background: 'transparent',
+                  color: shadowType === 'outer' ? '#f9a8d4' : '#ffffff',
+                  background: shadowType === 'outer' ? '#1f1f1f' : 'transparent',
                   border: 'none',
                   cursor: 'pointer'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = '#1f1f1f'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                onMouseLeave={(e) => e.currentTarget.style.background = shadowType === 'outer' ? '#1f1f1f' : 'transparent'}
               >
                 Outer Shadow
               </button>
               <button
-                onClick={() => onToggleEffectsMenu()}
+                onClick={() => {
+                  onShadowTypeChange('inner');
+                }}
                 style={{ 
                   width: '100%', 
                   padding: '8px 12px', 
                   textAlign: 'left', 
                   fontSize: '14px', 
-                  color: '#ffffff',
-                  background: 'transparent',
+                  color: shadowType === 'inner' ? '#f9a8d4' : '#ffffff',
+                  background: shadowType === 'inner' ? '#1f1f1f' : 'transparent',
                   border: 'none',
                   cursor: 'pointer'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = '#1f1f1f'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                onMouseLeave={(e) => e.currentTarget.style.background = shadowType === 'inner' ? '#1f1f1f' : 'transparent'}
               >
                 Inner Shadow
               </button>
+              {shadowType !== 'none' && (
+                <div style={{ padding: '12px', borderTop: '1px solid rgba(244, 114, 182, 0.2)' }}>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>Shadow Color:</label>
+                    <ColorPicker
+                      color={shadowColor}
+                      onChange={onShadowColorChange}
+                      onClose={() => {}}
+                    />
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '12px', color: '#9ca3af' }}>Blur:</label>
+                      <span style={{ fontSize: '12px', color: '#ffffff' }}>{shadowBlur}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="50"
+                      step="1"
+                      value={shadowBlur}
+                      onChange={(e) => onShadowBlurChange(Number(e.target.value))}
+                      style={{ 
+                        width: '100%', 
+                        height: '8px', 
+                        background: '#1f1f1f', 
+                        borderRadius: '4px', 
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '12px', color: '#9ca3af' }}>Offset X:</label>
+                      <span style={{ fontSize: '12px', color: '#ffffff' }}>{shadowOffsetX}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="50"
+                      step="1"
+                      value={shadowOffsetX}
+                      onChange={(e) => onShadowOffsetXChange(Number(e.target.value))}
+                      style={{ 
+                        width: '100%', 
+                        height: '8px', 
+                        background: '#1f1f1f', 
+                        borderRadius: '4px', 
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '12px', color: '#9ca3af' }}>Offset Y:</label>
+                      <span style={{ fontSize: '12px', color: '#ffffff' }}>{shadowOffsetY}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="50"
+                      step="1"
+                      value={shadowOffsetY}
+                      onChange={(e) => onShadowOffsetYChange(Number(e.target.value))}
+                      style={{ 
+                        width: '100%', 
+                        height: '8px', 
+                        background: '#1f1f1f', 
+                        borderRadius: '4px', 
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '12px', color: '#9ca3af' }}>Opacity:</label>
+                      <span style={{ fontSize: '12px', color: '#ffffff' }}>{opacity}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={opacity}
+                      onChange={(e) => onOpacityChange(Number(e.target.value))}
+                      style={{ 
+                        width: '100%', 
+                        height: '8px', 
+                        background: '#1f1f1f', 
+                        borderRadius: '4px', 
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
         
         <button
+          onClick={onToggleLock}
           style={{ 
             width: '32px', 
             height: '32px', 
-            background: '#000000', 
+            background: isLocked ? '#f9a8d4' : '#000000', 
             borderRadius: '4px', 
             fontSize: '14px', 
             border: '1px solid rgba(244, 114, 182, 0.2)', 
@@ -247,11 +386,17 @@ export function ShapeEditControls({
           }}
           onMouseEnter={buttonHover}
           onMouseLeave={buttonLeave}
-          title="Lock"
+          title={isLocked ? "Unlock" : "Lock"}
         >
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-          </svg>
+          {isLocked ? (
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+            </svg>
+          ) : (
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+            </svg>
+          )}
         </button>
       </div>
       

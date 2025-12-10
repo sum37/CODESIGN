@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useCanvasStore } from '../../../stores/canvasStore';
 
 export interface ToolbarState {
   // 도형 메뉴
@@ -57,6 +58,20 @@ export interface ToolbarState {
   bringForwardMenuRef: React.RefObject<HTMLDivElement>;
   sendBackwardMenuRef: React.RefObject<HTMLDivElement>;
   borderRadiusInputRef: React.RefObject<HTMLInputElement>;
+  
+  // Effects 관련
+  shadowType: 'none' | 'outer' | 'inner';
+  setShadowType: (type: 'none' | 'outer' | 'inner') => void;
+  shadowColor: string;
+  setShadowColor: (color: string) => void;
+  shadowBlur: number;
+  setShadowBlur: (blur: number) => void;
+  shadowOffsetX: number;
+  setShadowOffsetX: (offset: number) => void;
+  shadowOffsetY: number;
+  setShadowOffsetY: (offset: number) => void;
+  opacity: number;
+  setOpacity: (opacity: number) => void;
 }
 
 export function useToolbar(): ToolbarState {
@@ -96,6 +111,15 @@ export function useToolbar(): ToolbarState {
   const bringForwardMenuRef = useRef<HTMLDivElement>(null);
   const sendBackwardMenuRef = useRef<HTMLDivElement>(null);
   const borderRadiusInputRef = useRef<HTMLInputElement>(null);
+  
+  // Effects 관련
+  const [shadowType, setShadowType] = useState<'none' | 'outer' | 'inner'>('none');
+  const [shadowColor, setShadowColor] = useState('#000000');
+  const [shadowBlur, setShadowBlur] = useState(10);
+  const [shadowOffsetX, setShadowOffsetX] = useState(5); // 기본값: 오른쪽 방향
+  const [shadowOffsetY, setShadowOffsetY] = useState(5); // 기본값: 아래쪽 방향
+  const [opacity, setOpacity] = useState(100);
+  
   
   // 외부 클릭 시 메뉴 닫기
   useEffect(() => {
@@ -189,6 +213,20 @@ export function useToolbar(): ToolbarState {
     bringForwardMenuRef,
     sendBackwardMenuRef,
     borderRadiusInputRef,
+    
+    // Effects 관련
+    shadowType,
+    setShadowType,
+    shadowColor,
+    setShadowColor,
+    shadowBlur,
+    setShadowBlur,
+    shadowOffsetX,
+    setShadowOffsetX,
+    shadowOffsetY,
+    setShadowOffsetY,
+    opacity,
+    setOpacity,
   };
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useProjectStore } from '../../stores/projectStore';
 import { readFile } from '../../lib/fileSystem/fileSystem';
 import { CanvasRenderer } from './CanvasRenderer';
@@ -6,6 +6,7 @@ import { useCanvasSync } from '../../hooks/useCanvasSync';
 import { Toolbar } from './components/Toolbar';
 import { useCanvasStore, DrawingModeType } from '../../stores/canvasStore';
 import { updateElementInCode, updateSvgFillColor, updateSvgStroke } from '../../lib/ast/codeModifier';
+import { useToolbar } from './hooks/useToolbar';
 import './Canvas.css';
 
 export function Canvas() {
@@ -127,7 +128,10 @@ export function Canvas() {
   };
   
   // 도형 그리기 모드 상태
-  const { drawingMode, setDrawingMode, selectedElementId, selectedElementLoc } = useCanvasStore();
+  const { drawingMode, setDrawingMode, selectedElementId, selectedElementLoc, isElementLocked } = useCanvasStore();
+  
+  // Toolbar 상태 가져오기
+  const toolbar = useToolbar();
   
   // 도형 선택 핸들러 - 그리기 모드 활성화
   const handleShapeSelect = (shapeType: string) => {
@@ -364,6 +368,62 @@ export function Canvas() {
     }
   };
 
+  // Effects 변경 핸들러
+  const handleEffectsChange = useCallback((
+    shadowType: 'none' | 'outer' | 'inner',
+    shadowColor: string,
+    shadowBlur: number,
+    shadowOffsetX: number,
+    shadowOffsetY: number,
+    opacity: number
+  ) => {
+    console.log('[Canvas] Effects 변경:', { shadowType, shadowColor, shadowBlur, shadowOffsetX, shadowOffsetY, opacity });
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] 선택된 요소 또는 loc 정보가 없음');
+      return;
+    }
+    
+    // 그림자 스타일 생성
+    const styleUpdates: Record<string, string> = {};
+    
+    if (shadowType === 'outer') {
+      // Outer shadow: 양수 offset (아래쪽, 오른쪽)
+      const finalOffsetX = shadowOffsetX < 0 ? 0 : shadowOffsetX;
+      const finalOffsetY = shadowOffsetY < 0 ? 0 : shadowOffsetY;
+      styleUpdates.boxShadow = `${finalOffsetX}px ${finalOffsetY}px ${shadowBlur}px ${shadowColor}`;
+    } else if (shadowType === 'inner') {
+      // Inner shadow: 양수 offset (아래쪽, 오른쪽)
+      const finalOffsetX = shadowOffsetX < 0 ? 0 : shadowOffsetX;
+      const finalOffsetY = shadowOffsetY < 0 ? 0 : shadowOffsetY;
+      styleUpdates.boxShadow = `inset ${finalOffsetX}px ${finalOffsetY}px ${shadowBlur}px ${shadowColor}`;
+    } else if (shadowType === 'none') {
+      // 'none'일 때만 boxShadow를 'none'으로 설정
+      styleUpdates.boxShadow = 'none';
+    }
+    
+    // 투명도 적용 (0-100을 0-1로 변환)
+    const opacityValue = opacity / 100;
+    styleUpdates.opacity = opacityValue.toString();
+    
+    // 코드에서 해당 요소의 스타일 업데이트
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { 
+        style: styleUpdates
+      },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] Effects 변경 완료');
+    }
+  }, [selectedElementId, selectedElementLoc, componentCode, syncCanvasToCode]);
+
   // stroke 변경 핸들러 (도형 테두리)
   const handleStrokeChange = (strokeColor: string, strokeWidth: number) => {
     console.log('[Canvas] stroke 변경:', { strokeColor, strokeWidth }, '선택된 요소:', selectedElementId);
@@ -459,6 +519,7 @@ export function Canvas() {
         onShapeColorChange={handleShapeColorChange}
         onStrokeChange={handleStrokeChange}
         onBorderRadiusChange={handleBorderRadiusChange}
+        onEffectsChange={handleEffectsChange}
       />
       <div 
         className="canvas-content-wrapper"
