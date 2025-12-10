@@ -104,6 +104,31 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
+## 테스트
+
+### 테스트 실행
+
+```bash
+# 모든 테스트 실행
+npm test
+
+# UI 모드로 테스트 실행
+npm run test:ui
+
+# 커버리지 포함 테스트 실행
+npm run test:coverage
+```
+
+### 테스트 커버리지
+
+테스트 커버리지는 60% 이상을 목표로 합니다. 메인 로직(UI가 아닌 핵심 비즈니스 로직)에 대한 테스트를 포함합니다:
+
+- **AST 파싱 및 코드 수정 로직** (`src/lib/ast/`)
+- **파일 시스템 유틸리티** (`src/lib/fileSystem/`)
+- **상태 관리 로직** (`src/stores/`)
+
+테스트는 `src/lib/`, `src/stores/` 디렉토리의 `__tests__` 폴더에 위치합니다.
+
 ## 개발 가이드
 
 ### AST 동기화 엔진

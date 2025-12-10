@@ -19,7 +19,7 @@ const IGNORED_PATTERNS = [
   'src-tauri',
 ];
 
-function shouldIgnore(name: string): boolean {
+export function shouldIgnore(name: string): boolean {
   return IGNORED_PATTERNS.some((pattern) => name.includes(pattern));
 }
 
