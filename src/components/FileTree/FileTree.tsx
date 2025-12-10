@@ -45,7 +45,7 @@ export function FileTree() {
   return (
     <div className="file-tree-container">
       <div className="file-tree-header">
-        <h3>파일 탐색기</h3>
+        <h3>File Explorer</h3>
       </div>
       <div className="file-tree-content">
         <FileTreeNode

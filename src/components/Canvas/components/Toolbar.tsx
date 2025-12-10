@@ -21,9 +21,9 @@ interface ToolbarProps {
   onBorderRadiusChange?: (radius: number) => void;
 }
 
-export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeChange, onFontFamilyChange, onFontWeightChange, onFontStyleChange, onTextColorChange, onTextAlignChange, onShapeColorChange, onStrokeChange, onBorderRadiusChange }: ToolbarProps) {
+export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeChange, onFontFamilyChange, onFontWeightChange, onFontStyleChange, onTextColorChange, onTextAlignChange, onShapeColorChange, onStrokeChange, onBorderRadiusChange, onEffectsChange }: ToolbarProps) {
   const toolbar = useToolbar();
-  const { drawingMode, selectedElementId, selectedElementHasBorderRadius, selectedElementBorderRadius, selectedElementSize } = useCanvasStore();
+  const { drawingMode, selectedElementId, selectedElementHasBorderRadius, selectedElementBorderRadius, selectedElementSize, setElementLock, isElementLocked } = useCanvasStore();
 
   // Figma 방식: 최대 radius = 짧은 변의 절반
   const maxBorderRadius = selectedElementSize.width > 0 && selectedElementSize.height > 0
@@ -215,6 +215,105 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeCha
         bringForwardMenuRef={toolbar.bringForwardMenuRef}
         sendBackwardMenuRef={toolbar.sendBackwardMenuRef}
         borderRadiusInputRef={toolbar.borderRadiusInputRef}
+        isLocked={selectedElementId ? isElementLocked(selectedElementId) : false}
+        onToggleLock={() => {
+          if (selectedElementId) {
+            setElementLock(selectedElementId, !isElementLocked(selectedElementId));
+          }
+        }}
+        shadowType={toolbar.shadowType}
+        onShadowTypeChange={(type) => {
+          toolbar.setShadowType(type);
+          let newOffsetX = toolbar.shadowOffsetX;
+          let newOffsetY = toolbar.shadowOffsetY;
+          
+          // Inner shadow로 변경 시 offset을 양수로 설정 (아래쪽, 오른쪽)
+          if (type === 'inner') {
+            // 음수면 양수로 변환, 이미 양수면 유지
+            if (newOffsetX < 0) {
+              newOffsetX = Math.abs(newOffsetX);
+            } else if (newOffsetX === 0) {
+              newOffsetX = 5; // 기본값
+            }
+            if (newOffsetY < 0) {
+              newOffsetY = Math.abs(newOffsetY);
+            } else if (newOffsetY === 0) {
+              newOffsetY = 5; // 기본값
+            }
+            toolbar.setShadowOffsetX(newOffsetX);
+            toolbar.setShadowOffsetY(newOffsetY);
+          } else if (type === 'outer') {
+            // Outer shadow로 변경 시 offset을 양수로 설정 (아래쪽, 오른쪽)
+            if (newOffsetX < 0) {
+              newOffsetX = Math.abs(newOffsetX);
+            } else if (newOffsetX === 0) {
+              newOffsetX = 5; // 기본값
+            }
+            if (newOffsetY < 0) {
+              newOffsetY = Math.abs(newOffsetY);
+            } else if (newOffsetY === 0) {
+              newOffsetY = 5; // 기본값
+            }
+            toolbar.setShadowOffsetX(newOffsetX);
+            toolbar.setShadowOffsetY(newOffsetY);
+          }
+          
+          // 변환된 offset 값으로 onEffectsChange 호출
+          if (onEffectsChange && selectedElementId) {
+            onEffectsChange(type, toolbar.shadowColor, toolbar.shadowBlur, newOffsetX, newOffsetY, toolbar.opacity);
+          }
+        }}
+        shadowColor={toolbar.shadowColor}
+        onShadowColorChange={(color) => {
+          toolbar.setShadowColor(color);
+          if (onEffectsChange && selectedElementId) {
+            onEffectsChange(toolbar.shadowType, color, toolbar.shadowBlur, toolbar.shadowOffsetX, toolbar.shadowOffsetY, toolbar.opacity);
+          }
+        }}
+        shadowBlur={toolbar.shadowBlur}
+        onShadowBlurChange={(blur) => {
+          toolbar.setShadowBlur(blur);
+          if (onEffectsChange && selectedElementId) {
+            onEffectsChange(toolbar.shadowType, toolbar.shadowColor, blur, toolbar.shadowOffsetX, toolbar.shadowOffsetY, toolbar.opacity);
+          }
+        }}
+        shadowOffsetX={toolbar.shadowOffsetX}
+        onShadowOffsetXChange={(offset) => {
+          // shadowType에 맞게 값 제한 및 변환
+          let adjustedOffset = offset;
+          if (toolbar.shadowType === 'outer' || toolbar.shadowType === 'inner') {
+            // Outer shadow와 Inner shadow 모두 양수만 허용 (오른쪽)
+            if (offset < 0) {
+              adjustedOffset = 0;
+            }
+          }
+          toolbar.setShadowOffsetX(adjustedOffset);
+          if (onEffectsChange && selectedElementId) {
+            onEffectsChange(toolbar.shadowType, toolbar.shadowColor, toolbar.shadowBlur, adjustedOffset, toolbar.shadowOffsetY, toolbar.opacity);
+          }
+        }}
+        shadowOffsetY={toolbar.shadowOffsetY}
+        onShadowOffsetYChange={(offset) => {
+          // shadowType에 맞게 값 제한 및 변환
+          let adjustedOffset = offset;
+          if (toolbar.shadowType === 'outer' || toolbar.shadowType === 'inner') {
+            // Outer shadow와 Inner shadow 모두 양수만 허용 (아래쪽)
+            if (offset < 0) {
+              adjustedOffset = 0;
+            }
+          }
+          toolbar.setShadowOffsetY(adjustedOffset);
+          if (onEffectsChange && selectedElementId) {
+            onEffectsChange(toolbar.shadowType, toolbar.shadowColor, toolbar.shadowBlur, toolbar.shadowOffsetX, adjustedOffset, toolbar.opacity);
+          }
+        }}
+        opacity={toolbar.opacity}
+        onOpacityChange={(opacity) => {
+          toolbar.setOpacity(opacity);
+          if (onEffectsChange && selectedElementId) {
+            onEffectsChange(toolbar.shadowType, toolbar.shadowColor, toolbar.shadowBlur, toolbar.shadowOffsetX, toolbar.shadowOffsetY, opacity);
+          }
+        }}
       />
     </div>
   );

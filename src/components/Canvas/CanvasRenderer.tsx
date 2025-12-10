@@ -51,6 +51,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     drawCurrentPosition,
     setDrawCurrentPosition,
     getNextZIndex,
+    isElementLocked,
   } = useCanvasStore();
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   const editingRef = useRef<HTMLElement | null>(null);
@@ -1098,6 +1099,11 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     let originalMarginBottom = 0;
 
     box.addEventListener('mousedown', (e) => {
+      // 잠금 상태일 때 드래그 비활성화 (요소별 잠금 상태 확인)
+      if (isElementLocked(elementId)) {
+        return;
+      }
+      
       // 리사이즈 핸들을 클릭한 경우는 드래그하지 않음
       if ((e.target as HTMLElement).classList.contains('resize-handle')) {
         return;
@@ -1327,6 +1333,11 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     handles.forEach((handle) => {
       handle.addEventListener('mousedown', (e) => {
         const mouseEvent = e as MouseEvent;
+        
+        // 잠금 상태일 때 리사이즈 비활성화 (요소별 잠금 상태 확인)
+        if (isElementLocked(elementId)) {
+          return;
+        }
         
         // 우클릭인 경우 리사이즈하지 않음
         if (mouseEvent.button !== 0) {
