@@ -915,6 +915,87 @@ export function updateSvgFillColor(
 }
 
 /**
+ * SVG 요소의 stroke 속성 변경
+ * @param code - 원본 코드
+ * @param loc - 요소의 AST 위치 정보
+ * @param strokeColor - 테두리 색상
+ * @param strokeWidth - 테두리 두께
+ */
+export function updateSvgStroke(
+  code: string,
+  loc: SourceLocation,
+  strokeColor: string,
+  strokeWidth: number
+): string {
+  console.log('[codeModifier] updateSvgStroke 호출:', { loc, strokeColor, strokeWidth });
+  
+  const lines = code.split('\n');
+  const targetLine = loc.start.line - 1; // 0-indexed
+  const endLine = loc.end.line - 1;
+  
+  if (targetLine < 0 || targetLine >= lines.length) {
+    console.warn('[codeModifier] 유효하지 않은 라인 번호:', loc.start.line);
+    return code;
+  }
+  
+  // 요소의 시작/끝 문자 인덱스 계산
+  let startCharIndex = 0;
+  for (let i = 0; i < targetLine; i++) {
+    startCharIndex += lines[i].length + 1;
+  }
+  startCharIndex += loc.start.column;
+  
+  let endCharIndex = 0;
+  for (let i = 0; i < endLine; i++) {
+    endCharIndex += lines[i].length + 1;
+  }
+  endCharIndex += loc.end.column;
+  
+  // SVG 요소 전체 내용 추출
+  const svgContent = code.substring(startCharIndex, endCharIndex);
+  console.log('[codeModifier] SVG 요소 내용:', svgContent.substring(0, 200));
+  
+  let updatedContent = svgContent;
+  
+  if (strokeWidth > 0) {
+    // stroke 속성 추가/수정
+    // 기존 stroke 속성 찾아서 교체
+    const strokePattern = /stroke="[^"]*"/g;
+    const strokeWidthPattern = /stroke-width="[^"]*"/g;
+    
+    if (strokePattern.test(svgContent)) {
+      updatedContent = svgContent.replace(strokePattern, `stroke="${strokeColor}"`);
+    } else {
+      // stroke 속성이 없으면 fill 속성 뒤에 추가
+      updatedContent = svgContent.replace(/(fill="[^"]*")/, `$1 stroke="${strokeColor}"`);
+    }
+    
+    if (strokeWidthPattern.test(updatedContent)) {
+      updatedContent = updatedContent.replace(strokeWidthPattern, `stroke-width="${strokeWidth}"`);
+    } else {
+      // stroke-width 속성이 없으면 stroke 속성 뒤에 추가
+      updatedContent = updatedContent.replace(/(stroke="[^"]*")/, `$1 stroke-width="${strokeWidth}"`);
+    }
+  } else {
+    // strokeWidth가 0이면 stroke 속성 제거
+    updatedContent = svgContent
+      .replace(/\s*stroke="[^"]*"/g, '')
+      .replace(/\s*stroke-width="[^"]*"/g, '');
+  }
+  
+  if (updatedContent === svgContent) {
+    console.warn('[codeModifier] stroke 속성 변경 실패');
+    return code;
+  }
+  
+  // 코드 교체
+  const result = code.substring(0, startCharIndex) + updatedContent + code.substring(endCharIndex);
+  console.log('[codeModifier] SVG stroke 변경 완료');
+  
+  return result;
+}
+
+/**
  * 요소를 코드에서 삭제
  * @param code - 원본 코드
  * @param loc - 요소의 AST 위치 정보

@@ -5,7 +5,7 @@ import { CanvasRenderer } from './CanvasRenderer';
 import { useCanvasSync } from '../../hooks/useCanvasSync';
 import { Toolbar } from './components/Toolbar';
 import { useCanvasStore, DrawingModeType } from '../../stores/canvasStore';
-import { updateElementInCode, updateSvgFillColor } from '../../lib/ast/codeModifier';
+import { updateElementInCode, updateSvgFillColor, updateSvgStroke } from '../../lib/ast/codeModifier';
 import './Canvas.css';
 
 export function Canvas() {
@@ -341,6 +341,52 @@ export function Canvas() {
     }
   };
 
+  // stroke 변경 핸들러 (도형 테두리)
+  const handleStrokeChange = (strokeColor: string, strokeWidth: number) => {
+    console.log('[Canvas] stroke 변경:', { strokeColor, strokeWidth }, '선택된 요소:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] 선택된 요소 또는 loc 정보가 없음');
+      return;
+    }
+    
+    // 선택된 요소가 SVG인지 확인 (코드에서 해당 위치의 태그 확인)
+    const lines = componentCode.split('\n');
+    const targetLine = selectedElementLoc.start.line - 1;
+    const column = selectedElementLoc.start.column;
+    
+    let isSvgShape = false;
+    if (targetLine >= 0 && targetLine < lines.length) {
+      const lineContent = lines[targetLine].substring(column);
+      isSvgShape = lineContent.trimStart().startsWith('<svg');
+    }
+    
+    let updatedCode: string;
+    
+    if (isSvgShape) {
+      // SVG 도형: stroke 및 stroke-width 속성 변경
+      console.log('[Canvas] SVG 도형 stroke 변경');
+      updatedCode = updateSvgStroke(componentCode, selectedElementLoc, strokeColor, strokeWidth);
+    } else {
+      // div 도형: border 스타일 변경
+      console.log('[Canvas] div 도형 stroke 변경');
+      const borderStyle = strokeWidth > 0 ? `${strokeWidth}px solid ${strokeColor}` : 'none';
+      updatedCode = updateElementInCode(
+        componentCode,
+        selectedElementId,
+        { style: { border: borderStyle } },
+        selectedElementLoc
+      );
+    }
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] stroke 변경 완료');
+    }
+  };
+
   return (
     <div className="canvas-container">
       <div className="canvas-header">
@@ -388,6 +434,7 @@ export function Canvas() {
         onTextColorChange={handleTextColorChange}
         onTextAlignChange={handleTextAlignChange}
         onShapeColorChange={handleShapeColorChange}
+        onStrokeChange={handleStrokeChange}
       />
       <div 
         className="canvas-content-wrapper"

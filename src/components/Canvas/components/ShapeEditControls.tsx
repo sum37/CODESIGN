@@ -5,6 +5,10 @@ import './Toolbar.css';
 interface ShapeEditControlsProps {
   shapeColor: string;
   onShapeColorChange: (color: string) => void;
+  strokeColor: string;
+  onStrokeColorChange: (color: string) => void;
+  strokeWidth: number;
+  onStrokeWidthChange: (width: number) => void;
   shapeBorderRadius: number;
   onShapeBorderRadiusChange: (radius: number) => void;
   borderRadiusInputValue: string;
@@ -30,6 +34,10 @@ interface ShapeEditControlsProps {
 export function ShapeEditControls({
   shapeColor,
   onShapeColorChange,
+  strokeColor,
+  onStrokeColorChange,
+  strokeWidth,
+  onStrokeWidthChange,
   shapeBorderRadius,
   onShapeBorderRadiusChange,
   borderRadiusInputValue,
@@ -269,35 +277,31 @@ export function ShapeEditControls({
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)', 
                 zIndex: 1000, 
                 minWidth: '220px',
-                padding: '12px'
               }}
             >
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ fontSize: '12px', color: '#ffffff', display: 'block', marginBottom: '8px' }}>Stroke Color:</label>
-                <input
-                  type="color"
-                  defaultValue="#000000"
-                  style={{ 
-                    width: '100%', 
-                    height: '40px', 
-                    cursor: 'pointer',
-                    border: 'none',
-                    outline: 'none',
-                    background: 'transparent'
-                  }}
-                />
+              {/* Stroke Color Section */}
+              <div style={{ padding: '12px 12px 0' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>Stroke Color:</label>
               </div>
-              <div style={{ marginBottom: '8px' }}>
+              <ColorPicker
+                color={strokeColor}
+                onChange={onStrokeColorChange}
+                onClose={onToggleStrokeMenu}
+              />
+              
+              {/* Stroke Width Section */}
+              <div style={{ padding: '0 12px 12px', borderTop: '1px solid rgba(244, 114, 182, 0.1)', marginTop: '8px', paddingTop: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <label style={{ fontSize: '12px', color: '#ffffff' }}>Stroke Width:</label>
-                  <span style={{ fontSize: '12px', color: '#9ca3af' }}>0px</span>
+                  <label style={{ fontSize: '12px', color: '#9ca3af' }}>Stroke Width:</label>
+                  <span style={{ fontSize: '12px', color: '#ffffff' }}>{strokeWidth}px</span>
                 </div>
                 <input
                   type="range"
                   min="0"
                   max="20"
                   step="1"
-                  defaultValue="0"
+                  value={strokeWidth}
+                  onChange={(e) => onStrokeWidthChange(Number(e.target.value))}
                   style={{ 
                     width: '100%', 
                     height: '8px', 
@@ -308,23 +312,30 @@ export function ShapeEditControls({
                   }}
                 />
               </div>
-              <button
-                onClick={() => onToggleStrokeMenu()}
-                style={{ 
-                  width: '100%', 
-                  padding: '4px 8px', 
-                  fontSize: '12px', 
-                  background: '#1f1f1f', 
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#2f2f2f'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#1f1f1f'}
-              >
-                Remove Stroke
-              </button>
+              
+              {/* Remove Stroke Button */}
+              <div style={{ padding: '0 12px 12px' }}>
+                <button
+                  onClick={() => {
+                    onStrokeWidthChange(0);
+                    onToggleStrokeMenu();
+                  }}
+                  style={{ 
+                    width: '100%', 
+                    padding: '6px 8px', 
+                    fontSize: '12px', 
+                    background: '#1f1f1f', 
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#2f2f2f'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#1f1f1f'}
+                >
+                  Remove Stroke
+                </button>
+              </div>
             </div>
           )}
         </div>
