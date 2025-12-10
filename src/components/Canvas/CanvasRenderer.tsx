@@ -438,8 +438,13 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         
         onCodeChange(updatedCode);
         window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+        // 삭제 후 모든 선택 관련 상태 초기화
         setSelectedElementId(null);
         setSelectedElementLoc(null);
+        setSelectedElementType(null);
+        setSelectedElementHasBorderRadius(false);
+        setSelectedElementBorderRadius(0);
+        setSelectedElementSize({ width: 0, height: 0 });
         setContextMenu({ visible: false, x: 0, y: 0, elementId: null });
         console.log('[CanvasRenderer] 요소 삭제 완료');
       } else {
@@ -814,9 +819,18 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         return; // 툴바를 클릭한 경우는 무시
       }
 
-      // 외부를 클릭한 경우 선택 해제
+      // 외부를 클릭한 경우 선택 해제 및 모든 관련 상태 초기화
       setSelectedElementId(null);
       setSelectedElementLoc(null);
+      setSelectedElementType(null);
+      setSelectedElementHasBorderRadius(false);
+      setSelectedElementBorderRadius(0);
+      setSelectedElementSize({ width: 0, height: 0 });
+      
+      // Ghost box 즉시 제거
+      if (overlayRef.current) {
+        overlayRef.current.innerHTML = '';
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -998,6 +1012,14 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     const root = reactRootRef.current;
     const overlay = overlayRef.current;
     if (!root || !overlay) return;
+    
+    // 현재 선택된 요소가 아니면 ghost box 생성하지 않음
+    // (setTimeout으로 지연 호출 시 선택 해제된 경우 방지)
+    const currentSelectedId = useCanvasStore.getState().selectedElementId;
+    if (currentSelectedId !== elementId) {
+      overlay.innerHTML = '';
+      return;
+    }
 
     overlay.innerHTML = '';
 
