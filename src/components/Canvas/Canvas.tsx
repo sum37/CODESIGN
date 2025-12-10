@@ -341,6 +341,29 @@ export function Canvas() {
     }
   };
 
+  // borderRadius 변경 핸들러 (둥근 사각형)
+  const handleBorderRadiusChange = (radius: number) => {
+    console.log('[Canvas] borderRadius 변경:', { radius }, '선택된 요소:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] 선택된 요소 또는 loc 정보가 없음');
+      return;
+    }
+    
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { style: { borderRadius: `${radius}px` } },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      console.log('[Canvas] borderRadius 변경 코드 업데이트');
+      setComponentCode(updatedCode);
+      handleCanvasChange(updatedCode);
+    }
+  };
+
   // stroke 변경 핸들러 (도형 테두리)
   const handleStrokeChange = (strokeColor: string, strokeWidth: number) => {
     console.log('[Canvas] stroke 변경:', { strokeColor, strokeWidth }, '선택된 요소:', selectedElementId);
@@ -435,6 +458,7 @@ export function Canvas() {
         onTextAlignChange={handleTextAlignChange}
         onShapeColorChange={handleShapeColorChange}
         onStrokeChange={handleStrokeChange}
+        onBorderRadiusChange={handleBorderRadiusChange}
       />
       <div 
         className="canvas-content-wrapper"

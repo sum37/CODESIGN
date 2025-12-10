@@ -29,6 +29,8 @@ interface ShapeEditControlsProps {
   bringForwardMenuRef: React.RefObject<HTMLDivElement>;
   sendBackwardMenuRef: React.RefObject<HTMLDivElement>;
   borderRadiusInputRef: React.RefObject<HTMLInputElement>;
+  isBorderRadiusEnabled?: boolean;
+  maxBorderRadius?: number;
 }
 
 export function ShapeEditControls({
@@ -58,6 +60,8 @@ export function ShapeEditControls({
   bringForwardMenuRef,
   sendBackwardMenuRef,
   borderRadiusInputRef,
+  isBorderRadiusEnabled = false,
+  maxBorderRadius = 100,
 }: ShapeEditControlsProps) {
   const buttonStyle = {
     padding: '4px 12px',
@@ -90,13 +94,14 @@ export function ShapeEditControls({
     }
   };
 
-  const handleBorderRadiusBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleBorderRadiusBlur = () => {
+    const value = borderRadiusInputValue;
     if (value === '' || isNaN(Number(value))) {
       onBorderRadiusInputChange('0');
       onShapeBorderRadiusChange(0);
     } else {
-      const finalRadius = Math.max(0, Number(value));
+      // Figma 방식: 최대값을 초과하지 않도록 제한
+      const finalRadius = Math.min(Math.max(0, Number(value)), maxBorderRadius);
       onShapeBorderRadiusChange(finalRadius);
       onBorderRadiusInputChange(finalRadius.toString());
     }
@@ -340,24 +345,41 @@ export function ShapeEditControls({
           )}
         </div>
         
-        {/* Corner Radius */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* Corner Radius - 둥근 사각형 선택 시에만 활성화 */}
+        <div 
+          style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '8px',
+            opacity: isBorderRadiusEnabled ? 1 : 0.4,
+            pointerEvents: isBorderRadiusEnabled ? 'auto' : 'none',
+          }}
+          title={isBorderRadiusEnabled ? '' : '둥근 사각형을 선택하세요'}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px', color: '#ffffff' }}>Corner Radius:</span>
+            <span style={{ fontSize: '14px', color: isBorderRadiusEnabled ? '#ffffff' : '#666666' }}>Corner Radius:</span>
             <input
               ref={borderRadiusInputRef}
               type="text"
               value={borderRadiusInputValue}
               onChange={handleBorderRadiusInputChange}
-              onBlur={handleBorderRadiusBlur}
+              onBlur={() => handleBorderRadiusBlur()}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') {
+                  handleBorderRadiusBlur();
+                }
+              }}
+              disabled={!isBorderRadiusEnabled}
               style={{ 
                 width: '64px', 
                 padding: '4px 8px', 
-                background: '#000000', 
+                background: isBorderRadiusEnabled ? '#000000' : '#1a1a1a', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
                 fontSize: '14px',
-                color: '#ffffff'
+                color: isBorderRadiusEnabled ? '#ffffff' : '#666666',
+                cursor: isBorderRadiusEnabled ? 'text' : 'not-allowed',
               }}
             />
           </div>
@@ -365,20 +387,21 @@ export function ShapeEditControls({
             <input
               type="range"
               min="0"
-              max="100"
-              value={shapeBorderRadius}
+              max={maxBorderRadius}
+              value={Math.min(shapeBorderRadius, maxBorderRadius)}
               onChange={(e) => {
-                const newRadius = Number(e.target.value);
+                const newRadius = Math.min(Number(e.target.value), maxBorderRadius);
                 onShapeBorderRadiusChange(newRadius);
                 onBorderRadiusInputChange(newRadius.toString());
               }}
+              disabled={!isBorderRadiusEnabled}
               style={{ 
                 flex: 1, 
                 height: '8px', 
                 background: '#1f1f1f', 
                 borderRadius: '4px', 
                 outline: 'none',
-                cursor: 'pointer'
+                cursor: isBorderRadiusEnabled ? 'pointer' : 'not-allowed',
               }}
             />
           </div>
