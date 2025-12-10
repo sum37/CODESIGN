@@ -424,16 +424,18 @@ function updateObjectExpression(node: t.ObjectExpression, updates: Record<string
  * @param code - 원본 코드
  * @param shapeType - 도형 타입
  * @param bounds - 도형의 위치와 크기
+ * @param zIndex - z-index 값 (기본값: 100)
  */
 export function insertShapeInCode(
   code: string,
   shapeType: string,
-  bounds: { x: number; y: number; width: number; height: number }
+  bounds: { x: number; y: number; width: number; height: number },
+  zIndex: number = 100
 ): string {
-  console.log('[codeModifier] insertShapeInCode 호출:', { shapeType, bounds });
+  console.log('[codeModifier] insertShapeInCode 호출:', { shapeType, bounds, zIndex });
   
   // 도형 타입에 따른 JSX 생성
-  const shapeJSX = generateShapeJSX(shapeType, bounds);
+  const shapeJSX = generateShapeJSX(shapeType, bounds, zIndex);
   
   if (!shapeJSX) {
     console.warn('[codeModifier] 도형 JSX 생성 실패');
@@ -600,7 +602,8 @@ function findOpeningTagEnd(code: string): number {
  */
 function generateShapeJSX(
   shapeType: string,
-  bounds: { x: number; y: number; width: number; height: number }
+  bounds: { x: number; y: number; width: number; height: number },
+  zIndex: number = 100
 ): string | null {
   const { x, y, width, height } = bounds;
   
@@ -608,7 +611,7 @@ function generateShapeJSX(
   const shapeId = `shape-${Date.now()}`;
   
   // 기본 스타일 - non-self-closing div로 생성
-  const baseStyle = `position: "absolute", left: "${x}px", top: "${y}px", width: "${width}px", height: "${height}px", zIndex: 100`;
+  const baseStyle = `position: "absolute", left: "${x}px", top: "${y}px", width: "${width}px", height: "${height}px", zIndex: ${zIndex}`;
   
   switch (shapeType) {
     case 'rectangle':
@@ -623,33 +626,33 @@ function generateShapeJSX(
     case 'circle':
       // 원은 가로/세로 중 작은 값으로 정사각형으로 만듦
       const circleSize = Math.min(width, height);
-      return `<div id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", width: "${circleSize}px", height: "${circleSize}px", backgroundColor: "#f9a8d4", borderRadius: "50%", zIndex: 100}}></div>`;
+      return `<div id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", width: "${circleSize}px", height: "${circleSize}px", backgroundColor: "#f9a8d4", borderRadius: "50%", zIndex: ${zIndex}}}></div>`;
     
     case 'ellipse':
       return `<div id="${shapeId}" style={{${baseStyle}, backgroundColor: "#f9a8d4", borderRadius: "50%"}}></div>`;
     
     case 'triangle':
-      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: ${zIndex}}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
         <polygon points="50,0 100,100 0,100" fill="#f9a8d4" />
       </svg>`;
     
     case 'diamond':
-      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: ${zIndex}}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
         <polygon points="50,0 100,50 50,100 0,50" fill="#f9a8d4" />
       </svg>`;
     
     case 'star':
-      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: ${zIndex}}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
         <polygon points="50,0 61,35 98,35 68,57 79,91 50,70 21,91 32,57 2,35 39,35" fill="#f9a8d4" />
       </svg>`;
     
     case 'pentagon':
-      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: ${zIndex}}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
         <polygon points="50,0 100,38 81,100 19,100 0,38" fill="#f9a8d4" />
       </svg>`;
     
     case 'hexagon':
-      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: 100}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+      return `<svg id="${shapeId}" style={{position: "absolute", left: "${x}px", top: "${y}px", zIndex: ${zIndex}}} width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
         <polygon points="50,0 93,25 93,75 50,100 7,75 7,25" fill="#f9a8d4" />
       </svg>`;
     
@@ -663,18 +666,20 @@ function generateShapeJSX(
  * 텍스트 박스를 코드에 삽입
  * @param code - 원본 코드
  * @param bounds - 텍스트 박스의 위치와 크기
+ * @param zIndex - z-index 값 (기본값: 100)
  */
 export function insertTextBoxInCode(
   code: string,
-  bounds: { x: number; y: number; width: number; height: number }
+  bounds: { x: number; y: number; width: number; height: number },
+  zIndex: number = 100
 ): string {
-  console.log('[codeModifier] insertTextBoxInCode 호출:', { bounds });
+  console.log('[codeModifier] insertTextBoxInCode 호출:', { bounds, zIndex });
   
   const { x, y, width, height } = bounds;
   const textBoxId = `textbox-${Date.now()}`;
   
   // 텍스트 박스 JSX 생성 (p 태그 사용)
-  const textBoxJSX = `<p id="${textBoxId}" style={{position: "absolute", left: "${x}px", top: "${y}px", fontSize: "16px", color: "#333333", zIndex: 100, cursor: "text", margin: 0}}>텍스트를 입력하세요</p>`;
+  const textBoxJSX = `<p id="${textBoxId}" style={{position: "absolute", left: "${x}px", top: "${y}px", fontSize: "16px", color: "#333333", zIndex: ${zIndex}, cursor: "text", margin: 0}}>텍스트를 입력하세요</p>`;
   
   // return 문 찾기 (insertShapeInCode와 동일한 로직)
   let insertIndex = -1;
@@ -844,6 +849,153 @@ export function updateTextInCode(
   
   // 코드 교체
   const result = code.substring(0, startCharIndex) + newElementContent + code.substring(endCharIndex);
+  
+  return result;
+}
+
+/**
+ * SVG 요소의 fill 색상 변경
+ * @param code - 원본 코드
+ * @param loc - 요소의 AST 위치 정보
+ * @param newColor - 새로운 색상
+ */
+export function updateSvgFillColor(
+  code: string,
+  loc: SourceLocation,
+  newColor: string
+): string {
+  console.log('[codeModifier] updateSvgFillColor 호출:', { loc, newColor });
+  
+  const lines = code.split('\n');
+  const targetLine = loc.start.line - 1; // 0-indexed
+  const endLine = loc.end.line - 1;
+  
+  if (targetLine < 0 || targetLine >= lines.length) {
+    console.warn('[codeModifier] 유효하지 않은 라인 번호:', loc.start.line);
+    return code;
+  }
+  
+  // 요소의 시작/끝 문자 인덱스 계산
+  let startCharIndex = 0;
+  for (let i = 0; i < targetLine; i++) {
+    startCharIndex += lines[i].length + 1;
+  }
+  startCharIndex += loc.start.column;
+  
+  let endCharIndex = 0;
+  for (let i = 0; i < endLine; i++) {
+    endCharIndex += lines[i].length + 1;
+  }
+  endCharIndex += loc.end.column;
+  
+  // SVG 요소 전체 내용 추출
+  const svgContent = code.substring(startCharIndex, endCharIndex);
+  console.log('[codeModifier] SVG 요소 내용:', svgContent.substring(0, 200));
+  
+  // fill 속성 찾아서 변경 (fill="..." 또는 fill='...')
+  let updatedContent = svgContent;
+  
+  // fill="..." 패턴
+  const fillPattern = /fill="[^"]*"/g;
+  if (fillPattern.test(svgContent)) {
+    updatedContent = svgContent.replace(fillPattern, `fill="${newColor}"`);
+  } else {
+    // fill='...' 패턴
+    const fillPatternSingle = /fill='[^']*'/g;
+    if (fillPatternSingle.test(svgContent)) {
+      updatedContent = svgContent.replace(fillPatternSingle, `fill="${newColor}"`);
+    }
+  }
+  
+  if (updatedContent === svgContent) {
+    console.warn('[codeModifier] fill 속성을 찾을 수 없음');
+    return code;
+  }
+  
+  // 코드 교체
+  const result = code.substring(0, startCharIndex) + updatedContent + code.substring(endCharIndex);
+  console.log('[codeModifier] SVG fill 변경 완료');
+  
+  return result;
+}
+
+/**
+ * SVG 요소의 stroke 속성 변경
+ * @param code - 원본 코드
+ * @param loc - 요소의 AST 위치 정보
+ * @param strokeColor - 테두리 색상
+ * @param strokeWidth - 테두리 두께
+ */
+export function updateSvgStroke(
+  code: string,
+  loc: SourceLocation,
+  strokeColor: string,
+  strokeWidth: number
+): string {
+  console.log('[codeModifier] updateSvgStroke 호출:', { loc, strokeColor, strokeWidth });
+  
+  const lines = code.split('\n');
+  const targetLine = loc.start.line - 1; // 0-indexed
+  const endLine = loc.end.line - 1;
+  
+  if (targetLine < 0 || targetLine >= lines.length) {
+    console.warn('[codeModifier] 유효하지 않은 라인 번호:', loc.start.line);
+    return code;
+  }
+  
+  // 요소의 시작/끝 문자 인덱스 계산
+  let startCharIndex = 0;
+  for (let i = 0; i < targetLine; i++) {
+    startCharIndex += lines[i].length + 1;
+  }
+  startCharIndex += loc.start.column;
+  
+  let endCharIndex = 0;
+  for (let i = 0; i < endLine; i++) {
+    endCharIndex += lines[i].length + 1;
+  }
+  endCharIndex += loc.end.column;
+  
+  // SVG 요소 전체 내용 추출
+  const svgContent = code.substring(startCharIndex, endCharIndex);
+  console.log('[codeModifier] SVG 요소 내용:', svgContent.substring(0, 200));
+  
+  let updatedContent = svgContent;
+  
+  if (strokeWidth > 0) {
+    // stroke 속성 추가/수정
+    // 기존 stroke 속성 찾아서 교체
+    const strokePattern = /stroke="[^"]*"/g;
+    const strokeWidthPattern = /stroke-width="[^"]*"/g;
+    
+    if (strokePattern.test(svgContent)) {
+      updatedContent = svgContent.replace(strokePattern, `stroke="${strokeColor}"`);
+    } else {
+      // stroke 속성이 없으면 fill 속성 뒤에 추가
+      updatedContent = svgContent.replace(/(fill="[^"]*")/, `$1 stroke="${strokeColor}"`);
+    }
+    
+    if (strokeWidthPattern.test(updatedContent)) {
+      updatedContent = updatedContent.replace(strokeWidthPattern, `stroke-width="${strokeWidth}"`);
+    } else {
+      // stroke-width 속성이 없으면 stroke 속성 뒤에 추가
+      updatedContent = updatedContent.replace(/(stroke="[^"]*")/, `$1 stroke-width="${strokeWidth}"`);
+    }
+  } else {
+    // strokeWidth가 0이면 stroke 속성 제거
+    updatedContent = svgContent
+      .replace(/\s*stroke="[^"]*"/g, '')
+      .replace(/\s*stroke-width="[^"]*"/g, '');
+  }
+  
+  if (updatedContent === svgContent) {
+    console.warn('[codeModifier] stroke 속성 변경 실패');
+    return code;
+  }
+  
+  // 코드 교체
+  const result = code.substring(0, startCharIndex) + updatedContent + code.substring(endCharIndex);
+  console.log('[codeModifier] SVG stroke 변경 완료');
   
   return result;
 }

@@ -43,6 +43,10 @@ export interface ToolbarState {
   setShowSendBackwardMenu: (show: boolean) => void;
   shapeColor: string;
   setShapeColor: (color: string) => void;
+  strokeColor: string;
+  setStrokeColor: (color: string) => void;
+  strokeWidth: number;
+  setStrokeWidth: (width: number) => void;
   shapeBorderRadius: number;
   setShapeBorderRadius: (radius: number) => void;
   borderRadiusInputValue: string;
@@ -82,6 +86,8 @@ export function useToolbar(): ToolbarState {
   const [showBringForwardMenu, setShowBringForwardMenu] = useState(false);
   const [showSendBackwardMenu, setShowSendBackwardMenu] = useState(false);
   const [shapeColor, setShapeColor] = useState('#f9a8d4');
+  const [strokeColor, setStrokeColor] = useState('#000000');
+  const [strokeWidth, setStrokeWidth] = useState(1);
   const [shapeBorderRadius, setShapeBorderRadius] = useState(0);
   const [borderRadiusInputValue, setBorderRadiusInputValue] = useState('0');
   const shapeColorMenuRef = useRef<HTMLDivElement>(null);
@@ -169,6 +175,10 @@ export function useToolbar(): ToolbarState {
     setShowSendBackwardMenu,
     shapeColor,
     setShapeColor,
+    strokeColor,
+    setStrokeColor,
+    strokeWidth,
+    setStrokeWidth,
     shapeBorderRadius,
     setShapeBorderRadius,
     borderRadiusInputValue,

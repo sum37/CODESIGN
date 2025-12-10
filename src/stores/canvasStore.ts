@@ -24,6 +24,14 @@ interface CanvasState {
   setSelectedElementId: (id: string | null) => void;
   selectedElementLoc: SourceLocation | null;
   setSelectedElementLoc: (loc: SourceLocation | null) => void;
+  selectedElementType: string | null; // 선택된 요소의 타입 (div, svg, p 등)
+  setSelectedElementType: (type: string | null) => void;
+  selectedElementHasBorderRadius: boolean; // 선택된 요소가 borderRadius를 가지고 있는지
+  setSelectedElementHasBorderRadius: (has: boolean) => void;
+  selectedElementBorderRadius: number; // 선택된 요소의 borderRadius 값
+  setSelectedElementBorderRadius: (radius: number) => void;
+  selectedElementSize: { width: number; height: number }; // 선택된 요소의 크기
+  setSelectedElementSize: (size: { width: number; height: number }) => void;
   elementPositions: Record<string, ElementPosition>;
   updateElementPosition: (id: string, position: Partial<ElementPosition>) => void;
   
@@ -36,6 +44,10 @@ interface CanvasState {
   setDrawStartPosition: (position: { x: number; y: number } | null) => void;
   drawCurrentPosition: { x: number; y: number } | null;
   setDrawCurrentPosition: (position: { x: number; y: number } | null) => void;
+  
+  // z-index 관리 (도형, 텍스트박스 통합)
+  nextZIndex: number;
+  getNextZIndex: () => number;
 }
 
 export const useCanvasStore = create<CanvasState>((set) => ({
@@ -43,6 +55,14 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   setSelectedElementId: (id) => set({ selectedElementId: id }),
   selectedElementLoc: null,
   setSelectedElementLoc: (loc) => set({ selectedElementLoc: loc }),
+  selectedElementType: null,
+  setSelectedElementType: (type) => set({ selectedElementType: type }),
+  selectedElementHasBorderRadius: false,
+  setSelectedElementHasBorderRadius: (has) => set({ selectedElementHasBorderRadius: has }),
+  selectedElementBorderRadius: 0,
+  setSelectedElementBorderRadius: (radius) => set({ selectedElementBorderRadius: radius }),
+  selectedElementSize: { width: 0, height: 0 },
+  setSelectedElementSize: (size) => set({ selectedElementSize: size }),
   elementPositions: {},
   updateElementPosition: (id, position) =>
     set((state) => ({
@@ -64,5 +84,16 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   setDrawStartPosition: (position) => set({ drawStartPosition: position }),
   drawCurrentPosition: null,
   setDrawCurrentPosition: (position) => set({ drawCurrentPosition: position }),
+  
+  // z-index 관리 (도형, 텍스트박스 통합) - 100부터 시작
+  nextZIndex: 100,
+  getNextZIndex: () => {
+    let currentZIndex = 100;
+    set((state) => {
+      currentZIndex = state.nextZIndex;
+      return { nextZIndex: state.nextZIndex + 1 };
+    });
+    return currentZIndex;
+  },
 }));
 

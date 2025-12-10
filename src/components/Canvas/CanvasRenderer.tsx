@@ -37,6 +37,10 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     selectedElementId, 
     setSelectedElementId,
     setSelectedElementLoc,
+    setSelectedElementType,
+    setSelectedElementHasBorderRadius,
+    setSelectedElementBorderRadius,
+    setSelectedElementSize,
     updateElementPosition,
     drawingMode,
     setDrawingMode,
@@ -46,6 +50,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     setDrawStartPosition,
     drawCurrentPosition,
     setDrawCurrentPosition,
+    getNextZIndex,
   } = useCanvasStore();
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   const editingRef = useRef<HTMLElement | null>(null);
@@ -58,6 +63,58 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     elementId: string | null;
   }>({ visible: false, x: 0, y: 0, elementId: null });
   
+  // 요소 선택 시 타입과 borderRadius 정보 설정
+  const handleSelectElement = useCallback((
+    elementId: string,
+    loc: SourceLocation | null,
+    elementType: string,
+    style?: Record<string, any>
+  ) => {
+    setSelectedElementId(elementId);
+    setSelectedElementLoc(loc);
+    setSelectedElementType(elementType);
+    
+    // borderRadius가 있는지 확인 (둥근 사각형)
+    const hasBorderRadius = style?.borderRadius !== undefined && 
+                           style?.borderRadius !== '0' && 
+                           style?.borderRadius !== '0px' &&
+                           style?.borderRadius !== 0;
+    setSelectedElementHasBorderRadius(hasBorderRadius);
+    
+    // borderRadius 값 파싱 및 저장
+    let borderRadiusValue = 0;
+    if (style?.borderRadius) {
+      const radiusStr = String(style.borderRadius);
+      // "8px", "50%", 또는 숫자 형태 처리
+      const match = radiusStr.match(/^(\d+)/);
+      if (match) {
+        borderRadiusValue = parseInt(match[1], 10);
+      }
+    }
+    setSelectedElementBorderRadius(borderRadiusValue);
+    
+    // 요소 크기 파싱 및 저장 (Figma 방식 radius 제한용)
+    let width = 0;
+    let height = 0;
+    if (style?.width) {
+      const widthStr = String(style.width);
+      const widthMatch = widthStr.match(/^(\d+)/);
+      if (widthMatch) {
+        width = parseInt(widthMatch[1], 10);
+      }
+    }
+    if (style?.height) {
+      const heightStr = String(style.height);
+      const heightMatch = heightStr.match(/^(\d+)/);
+      if (heightMatch) {
+        height = parseInt(heightMatch[1], 10);
+      }
+    }
+    setSelectedElementSize({ width, height });
+    
+    console.log('[CanvasRenderer] 요소 선택:', { elementId, elementType, hasBorderRadius, borderRadiusValue, width, height });
+  }, [setSelectedElementId, setSelectedElementLoc, setSelectedElementType, setSelectedElementHasBorderRadius, setSelectedElementBorderRadius, setSelectedElementSize]);
+
   // 텍스트 편집 완료 핸들러
   const handleTextEditComplete = useCallback((
     elementId: string,
@@ -261,6 +318,10 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     const currentCode = codeRef.current;
     
     // 코드에 새 요소 삽입 (텍스트 박스 또는 도형)
+    // getNextZIndex를 사용하여 순차적으로 증가하는 z-index 할당
+    const newZIndex = getNextZIndex();
+    console.log('[CanvasRenderer] 새 요소 z-index:', newZIndex);
+    
     let updatedCode: string;
     if (drawingMode === 'textbox') {
       updatedCode = insertTextBoxInCode(currentCode, {
@@ -268,14 +329,14 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         y: Math.round(y),
         width: Math.round(width),
         height: Math.round(height),
-      });
+      }, newZIndex);
     } else {
       updatedCode = insertShapeInCode(currentCode, drawingMode, {
         x: Math.round(x),
         y: Math.round(y),
         width: Math.round(width),
         height: Math.round(height),
-      });
+      }, newZIndex);
     }
     
     console.log('[CanvasRenderer] 코드 변경 여부:', updatedCode !== currentCode);
@@ -377,8 +438,13 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         
         onCodeChange(updatedCode);
         window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+        // 삭제 후 모든 선택 관련 상태 초기화
         setSelectedElementId(null);
         setSelectedElementLoc(null);
+        setSelectedElementType(null);
+        setSelectedElementHasBorderRadius(false);
+        setSelectedElementBorderRadius(0);
+        setSelectedElementSize({ width: 0, height: 0 });
         setContextMenu({ visible: false, x: 0, y: 0, elementId: null });
         console.log('[CanvasRenderer] 요소 삭제 완료');
       } else {
@@ -561,6 +627,12 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     if (node.id) {
       elementIdMapRef.current.set(node, node.id);
       return node.id;
+    }
+    
+    // props.id가 있으면 사용 (도형, 텍스트박스 등 동적으로 생성된 요소)
+    if (node.props?.id && typeof node.props.id === 'string') {
+      elementIdMapRef.current.set(node, node.props.id);
+      return node.props.id;
     }
     
     // 경로 기반 ID 생성 (일관성 유지)
@@ -747,9 +819,18 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         return; // 툴바를 클릭한 경우는 무시
       }
 
-      // 외부를 클릭한 경우 선택 해제
+      // 외부를 클릭한 경우 선택 해제 및 모든 관련 상태 초기화
       setSelectedElementId(null);
       setSelectedElementLoc(null);
+      setSelectedElementType(null);
+      setSelectedElementHasBorderRadius(false);
+      setSelectedElementBorderRadius(0);
+      setSelectedElementSize({ width: 0, height: 0 });
+      
+      // Ghost box 즉시 제거
+      if (overlayRef.current) {
+        overlayRef.current.innerHTML = '';
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -931,6 +1012,14 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     const root = reactRootRef.current;
     const overlay = overlayRef.current;
     if (!root || !overlay) return;
+    
+    // 현재 선택된 요소가 아니면 ghost box 생성하지 않음
+    // (setTimeout으로 지연 호출 시 선택 해제된 경우 방지)
+    const currentSelectedId = useCanvasStore.getState().selectedElementId;
+    if (currentSelectedId !== elementId) {
+      overlay.innerHTML = '';
+      return;
+    }
 
     overlay.innerHTML = '';
 
@@ -1627,14 +1716,12 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
                   const parentLoc = parentEl.getAttribute('data-loc');
                   if (parentId) {
                     console.log('[CanvasRenderer] 텍스트 노드 클릭 → 부모 요소 선택:', parentId);
-                    setSelectedElementId(parentId);
-                    setSelectedElementLoc(safeParseLocJson(parentLoc));
+                    handleSelectElement(parentId, safeParseLocJson(parentLoc), 'span', {});
                     return;
                   }
                 }
               }
-              setSelectedElementId(elementId);
-              setSelectedElementLoc(safeParseLocJson(dataLoc));
+              handleSelectElement(elementId, safeParseLocJson(dataLoc), 'span', finalStyle);
             }
           }}
           onDoubleClick={(e) => {
@@ -1688,6 +1775,10 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
     const voidElements = ['input', 'img', 'br', 'hr', 'meta', 'link', 'area', 'base', 'col', 'embed', 'source', 'track', 'wbr', 'polygon', 'circle', 'rect', 'line', 'path', 'ellipse', 'polyline'];
     const isVoidElement = voidElements.includes(node.type);
     
+    // SVG 자식 요소인지 확인 (polygon, circle 등 - 클릭 시 부모 SVG 선택)
+    const svgChildElements = ['polygon', 'circle', 'rect', 'line', 'path', 'ellipse', 'polyline'];
+    const isSvgChildElement = svgChildElements.includes(node.type);
+    
     // 특수 요소들 (특별한 처리가 필요한 요소들)
     const specialElements = ['option', 'textarea', 'select'];
     const isSpecialElement = specialElements.includes(node.type);
@@ -1717,6 +1808,35 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
       // 편집 가능한 요소인지 확인
       const isEditable = editableTags.includes(node.type.toLowerCase());
       
+      // SVG 자식 요소는 클릭 이벤트를 부모 SVG로 전파하여 부모가 선택되도록 함
+      if (isSvgChildElement) {
+        return (
+          <ElementTag
+            key={elementId}
+            data-element-id={dataElementId}
+            data-loc={dataLoc}
+            style={{ ...finalStyle, cursor: 'pointer' }}
+            className={node.props?.className}
+            onClick={(e) => {
+              // SVG 자식 요소 클릭 시 부모 SVG 요소 찾아서 선택
+              const target = e.currentTarget as Element;
+              const parentSvg = target.closest('svg[data-element-id]');
+              if (parentSvg) {
+                e.stopPropagation();
+                const parentId = parentSvg.getAttribute('data-element-id');
+                const parentLoc = parentSvg.getAttribute('data-loc');
+                console.log('SVG 자식 요소 클릭 → 부모 SVG 선택:', parentId);
+                if (parentId) {
+                  // SVG는 borderRadius가 없음
+                  handleSelectElement(parentId, safeParseLocJson(parentLoc), 'svg', {});
+                }
+              }
+            }}
+            {...cleanProps}
+          />
+        );
+      }
+      
       return (
         <ElementTag
           key={elementId}
@@ -1728,8 +1848,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
             e.stopPropagation();
             console.log('Void 요소 클릭:', elementId, '타입:', node.type, '편집 가능:', isEditable);
             if (isEditable) {
-              setSelectedElementId(elementId);
-              setSelectedElementLoc(safeParseLocJson(dataLoc));
+              handleSelectElement(elementId, safeParseLocJson(dataLoc), node.type, finalStyle);
             }
           }}
           {...cleanProps}
@@ -1761,8 +1880,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
             const isEditable = editableTags.includes(node.type.toLowerCase());
             console.log('Option 요소 클릭:', elementId, '타입:', node.type, '편집 가능:', isEditable);
             if (isEditable) {
-              setSelectedElementId(elementId);
-              setSelectedElementLoc(safeParseLocJson(dataLoc));
+              handleSelectElement(elementId, safeParseLocJson(dataLoc), node.type, finalStyle);
             }
           }}
         >
@@ -1912,8 +2030,7 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
         onClick={(e) => {
           e.stopPropagation();
           if (!isEditing && isEditable) {
-            setSelectedElementId(elementId);
-            setSelectedElementLoc(safeParseLocJson(dataLoc));
+            handleSelectElement(elementId, safeParseLocJson(dataLoc), node.type, baseStyle);
           }
         }}
         onDoubleClick={(e) => {
