@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { useCanvasStore } from '../../../stores/canvasStore';
 
 export interface ToolbarState {
   // 도형 메뉴

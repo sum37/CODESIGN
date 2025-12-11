@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { open } from '@tauri-apps/api/dialog';
-import logoImage from '../../assets/logo.png';
+import logoImage from '../../assets/landingpage.png';
 import './SelectFolder.css';
 
 interface SelectFolderProps {

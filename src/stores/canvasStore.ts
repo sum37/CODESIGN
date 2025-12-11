@@ -55,7 +55,7 @@ interface CanvasState {
   isElementLocked: (elementId: string) => boolean;
 }
 
-export const useCanvasStore = create<CanvasState>((set) => ({
+export const useCanvasStore = create<CanvasState>((set, get) => ({
   selectedElementId: null,
   setSelectedElementId: (id) => set({ selectedElementId: id }),
   selectedElementLoc: null,
@@ -110,8 +110,8 @@ export const useCanvasStore = create<CanvasState>((set) => ({
         [elementId]: locked,
       },
     })),
-  isElementLocked: (elementId) => {
-    const state = useCanvasStore.getState();
+  isElementLocked: (elementId: string): boolean => {
+    const state = get();
     return state.elementLocks[elementId] || false;
   },
 }));

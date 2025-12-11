@@ -21,7 +21,7 @@ export function FileTree() {
       const tree = await readDirectory(root);
       setFileTree(tree);
     } catch (error) {
-      console.error('파일 트리 로드 실패:', error);
+      console.error('Failed to load file tree:', error);
     }
   };
 
@@ -75,7 +75,7 @@ export function ${componentName}() {
       // 새로 생성된 파일 선택
       setSelectedFile(filePath);
     } catch (error) {
-      console.error('새 파일 생성 실패:', error);
+      console.error('Failed to create new file:', error);
     }
   };
 
@@ -93,7 +93,7 @@ export function ${componentName}() {
   if (!fileTree) {
     return (
       <div className="file-tree-container">
-        <div className="file-tree-loading">로딩 중...</div>
+        <div className="file-tree-loading">Loading...</div>
       </div>
     );
   }

@@ -16,7 +16,7 @@
   max-width: 400px;
   width: 100%;
   height: auto;
-  margin-bottom: 1rem;
+  margin-bottom: 0rem;
   display: block;
   margin-left: auto;
   margin-right: auto;
@@ -24,7 +24,7 @@
 
 .select-folder-subtitle {
   font-size: 1.2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 2.3rem;
   color: #9ca3af;
   opacity: 0.9;
 }

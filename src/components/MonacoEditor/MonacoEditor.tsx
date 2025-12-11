@@ -41,7 +41,7 @@ export function MonacoEditor() {
         const updatedCode = event.detail;
         setCode(updatedCode);
         setSavedCode(updatedCode); // 파일에 이미 저장되었으므로 saved 상태로 설정
-        console.log('Canvas에서 코드 업데이트됨');
+        console.log('Code updated from Canvas');
       }
     };
 
@@ -53,14 +53,14 @@ export function MonacoEditor() {
 
   const loadFile = async (filePath: string) => {
     try {
-      console.log('파일 로드 시도:', filePath);
+      console.log('Loading file:', filePath);
       const content = await readFile(filePath);
-      console.log('파일 로드 성공:', filePath, '길이:', content.length);
+      console.log('File loaded successfully:', filePath, 'length:', content.length);
       setCode(content);
-      setSavedCode(content); // 로드한 내용을 저장된 코드로 설정
+      setSavedCode(content); // Set loaded content as saved code
     } catch (error) {
-      console.error('파일 로드 실패:', error);
-      setCode(`// 파일을 읽을 수 없습니다: ${filePath}\n// 에러: ${error instanceof Error ? error.message : String(error)}`);
+      console.error('Failed to load file:', error);
+      setCode(`// Unable to read file: ${filePath}\n// Error: ${error instanceof Error ? error.message : String(error)}`);
       setSavedCode('');
     }
   };
@@ -85,7 +85,7 @@ export function MonacoEditor() {
         window.dispatchEvent(new CustomEvent('code-saved', { detail: code }));
       }
     } catch (error) {
-      console.error('파일 저장 실패:', error);
+      console.error('Failed to save file:', error);
     }
   }, [code, selectedFile, syncCodeToCanvas]);
 
@@ -118,7 +118,7 @@ export function MonacoEditor() {
               {isUnsaved && <span className="monaco-editor-unsaved-indicator">●</span>}
             </>
           ) : (
-            '파일을 선택하세요'
+            'Select a file'
           )}
         </span>
       </div>

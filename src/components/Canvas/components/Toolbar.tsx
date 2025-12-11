@@ -19,6 +19,7 @@ interface ToolbarProps {
   onShapeColorChange?: (color: string) => void;
   onStrokeChange?: (strokeColor: string, strokeWidth: number) => void;
   onBorderRadiusChange?: (radius: number) => void;
+  onEffectsChange?: (shadowType: 'none' | 'outer' | 'inner', shadowColor: string, shadowBlur: number, shadowOffsetX: number, shadowOffsetY: number, opacity: number) => void;
 }
 
 export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeChange, onFontFamilyChange, onFontWeightChange, onFontStyleChange, onTextColorChange, onTextAlignChange, onShapeColorChange, onStrokeChange, onBorderRadiusChange, onEffectsChange }: ToolbarProps) {
@@ -40,7 +41,7 @@ export function Toolbar({ onAddText, onShapeSelect, onImageSelect, onFontSizeCha
 
   const handleShapeSelect = (shapeType: string) => {
     toolbar.setShowShapeMenu(false);
-    console.log(`${shapeType} 그리기 모드 활성화`);
+    console.log(`${shapeType} drawing mode activated`);
     onShapeSelect(shapeType);
   };
 

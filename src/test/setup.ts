@@ -12,7 +12,7 @@ if (typeof window !== 'undefined') {
   (window as any).__TAURI__ = {
     invoke: vi.fn(),
   };
-  (window as any).__TAURI_IPC__ = vi.fn((message) => {
+  (window as any).__TAURI_IPC__ = vi.fn((_message) => {
     return Promise.resolve({});
   });
   (window as any).__TAURI_METADATA__ = {
