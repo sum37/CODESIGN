@@ -7,7 +7,7 @@
 
 .canvas-header {
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(244, 114, 182, 0.3);
+  border-bottom: 1px solid rgba(244, 114, 182, 0.5);
   background: #000000;
   display: flex;
   align-items: center;
@@ -128,7 +128,7 @@
 /* 툴바 스타일 */
 .canvas-toolbar {
   background: #000000;
-  border-bottom: 1px solid rgba(244, 114, 182, 0.3);
+  border-bottom: 1px solid rgba(244, 114, 182, 0.5);
   padding: 12px 16px; /* py-3 px-4 */
   display: flex;
   align-items: center;
