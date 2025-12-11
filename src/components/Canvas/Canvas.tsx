@@ -498,22 +498,24 @@ export function Canvas() {
         </div>
       </div>
       
-      {/* 툴바 */}
-      <Toolbar
-        onAddText={handleAddText}
-        onShapeSelect={handleShapeSelect}
-        onImageSelect={handleImageSelect}
-        onFontSizeChange={handleFontSizeChange}
-        onFontFamilyChange={handleFontFamilyChange}
-        onFontWeightChange={handleFontWeightChange}
-        onFontStyleChange={handleFontStyleChange}
-        onTextColorChange={handleTextColorChange}
-        onTextAlignChange={handleTextAlignChange}
-        onShapeColorChange={handleShapeColorChange}
-        onStrokeChange={handleStrokeChange}
-        onBorderRadiusChange={handleBorderRadiusChange}
-        onEffectsChange={handleEffectsChange}
-      />
+      {/* 툴바 - 스크롤 가능한 wrapper로 감싸기 */}
+      <div className="canvas-toolbar-wrapper">
+        <Toolbar
+          onAddText={handleAddText}
+          onShapeSelect={handleShapeSelect}
+          onImageSelect={handleImageSelect}
+          onFontSizeChange={handleFontSizeChange}
+          onFontFamilyChange={handleFontFamilyChange}
+          onFontWeightChange={handleFontWeightChange}
+          onFontStyleChange={handleFontStyleChange}
+          onTextColorChange={handleTextColorChange}
+          onTextAlignChange={handleTextAlignChange}
+          onShapeColorChange={handleShapeColorChange}
+          onStrokeChange={handleStrokeChange}
+          onBorderRadiusChange={handleBorderRadiusChange}
+          onEffectsChange={handleEffectsChange}
+        />
+      </div>
       <div 
         className="canvas-content-wrapper"
         ref={canvasWrapperRef}
@@ -539,6 +541,7 @@ export function Canvas() {
               <p>Select a React component file (.tsx, .jsx) to render it here.</p>
             </div>
           )}
+
         </div>
       </div>
     </div>
