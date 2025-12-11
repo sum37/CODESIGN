@@ -2213,20 +2213,20 @@ export function CanvasRenderer({ code, onCodeChange, zoomLevel = 1 }: CanvasRend
   );
 }
 
-// 도형/텍스트박스 이름 한글 변환
+// Shape/textbox name display
 function getShapeDisplayName(drawingMode: DrawingModeType): string {
   const names: Record<string, string> = {
-    rectangle: '사각형',
-    roundedRectangle: '둥근 사각형',
-    parallelogram: '평행사변형',
-    circle: '원',
-    ellipse: '타원',
-    triangle: '삼각형',
-    diamond: '다이아몬드',
-    star: '별',
-    pentagon: '오각형',
-    hexagon: '육각형',
-    textbox: '텍스트 박스',
+    rectangle: 'Rectangle',
+    roundedRectangle: 'Rounded Rectangle',
+    parallelogram: 'Parallelogram',
+    circle: 'Circle',
+    ellipse: 'Ellipse',
+    triangle: 'Triangle',
+    diamond: 'Diamond',
+    star: 'Star',
+    pentagon: 'Pentagon',
+    hexagon: 'Hexagon',
+    textbox: 'Text Box',
   };
-  return names[drawingMode || ''] || '요소';
+  return names[drawingMode || ''] || 'Element';
 }

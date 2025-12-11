@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { readDirectory, readFile, writeFile, shouldIgnore } from '../fileSystem';
+import { readFile, writeFile, shouldIgnore } from '../fileSystem';
 import * as fs from '@tauri-apps/api/fs';
-import * as path from '@tauri-apps/api/path';
 
 // Tauri API 모킹
 vi.mock('@tauri-apps/api/fs');

@@ -38,23 +38,23 @@ export function ToolbarButtonGroup({
 
   return (
     <div className="canvas-toolbar-group">
-      {/* 텍스트 추가 버튼 */}
+      {/* Add Text Button */}
       <button 
         onClick={onAddText}
         className={`canvas-toolbar-button ${pendingText ? 'active' : ''}`}
-        title="텍스트 추가"
+        title="Add Text"
       >
-        <img src={newTextIcon} alt="텍스트 추가" style={{ width: '60px', height: 'auto' }} />
+        <img src={newTextIcon} alt="Add Text" style={{ width: '60px', height: 'auto' }} />
       </button>
 
-      {/* 도형 추가 버튼 */}
+      {/* Add Shape Button */}
       <div style={{ position: 'relative' }} ref={menuRef}>
         <button
           onClick={onToggleShapeMenu}
           className={`canvas-toolbar-button ${pendingShapeType ? 'active' : ''}`}
-          title="도형 추가"
+          title="Add Shape"
         >
-          <img src={newShapeIcon} alt="도형 추가" style={{ width: '70px', height: 'auto' }} />
+          <img src={newShapeIcon} alt="Add Shape" style={{ width: '70px', height: 'auto' }} />
         </button>
         <ShapeMenu
           showShapeMenu={showShapeMenu}
@@ -63,7 +63,7 @@ export function ToolbarButtonGroup({
         />
       </div>
 
-      {/* 이미지 추가 버튼 */}
+      {/* Add Image Button */}
       <div>
         <input
           ref={imageInputRef}
@@ -75,9 +75,9 @@ export function ToolbarButtonGroup({
         <button 
           onClick={() => imageInputRef.current?.click()}
           className="canvas-toolbar-button"
-          title="이미지 추가"
+          title="Add Image"
         >
-          <img src={newImageIcon} alt="이미지 추가" style={{ width: '65px', height: 'auto' }} />
+          <img src={newImageIcon} alt="Add Image" style={{ width: '65px', height: 'auto' }} />
         </button>
       </div>
     </div>

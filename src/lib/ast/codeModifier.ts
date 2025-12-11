@@ -675,7 +675,7 @@ export function insertTextBoxInCode(
 ): string {
   console.log('[codeModifier] insertTextBoxInCode 호출:', { bounds, zIndex });
   
-  const { x, y, width, height } = bounds;
+  const { x, y } = bounds;
   const textBoxId = `textbox-${Date.now()}`;
   
   // 텍스트 박스 JSX 생성 (p 태그 사용)
