@@ -475,9 +475,6 @@ export function Canvas() {
       <div className="canvas-header">
         <h3>Canvas Preview</h3>
         <div className="canvas-header-controls">
-          {selectedFile && (
-            <span className="canvas-file-name">{selectedFile.split('/').pop()}</span>
-          )}
           <div className="canvas-zoom-controls">
             <button 
               className="canvas-zoom-button"
