@@ -502,47 +502,52 @@ export function Canvas() {
         </div>
       </div>
       
-      {/* 툴바 */}
-      <Toolbar
-        onAddText={handleAddText}
-        onShapeSelect={handleShapeSelect}
-        onImageSelect={handleImageSelect}
-        onFontSizeChange={handleFontSizeChange}
-        onFontFamilyChange={handleFontFamilyChange}
-        onFontWeightChange={handleFontWeightChange}
-        onFontStyleChange={handleFontStyleChange}
-        onTextColorChange={handleTextColorChange}
-        onTextAlignChange={handleTextAlignChange}
-        onShapeColorChange={handleShapeColorChange}
-        onStrokeChange={handleStrokeChange}
-        onBorderRadiusChange={handleBorderRadiusChange}
-        onEffectsChange={handleEffectsChange}
-      />
+      {/* 툴바 - 스크롤 가능한 wrapper로 감싸기 */}
+      <div className="canvas-toolbar-wrapper">
+        <Toolbar
+          onAddText={handleAddText}
+          onShapeSelect={handleShapeSelect}
+          onImageSelect={handleImageSelect}
+          onFontSizeChange={handleFontSizeChange}
+          onFontFamilyChange={handleFontFamilyChange}
+          onFontWeightChange={handleFontWeightChange}
+          onFontStyleChange={handleFontStyleChange}
+          onTextColorChange={handleTextColorChange}
+          onTextAlignChange={handleTextAlignChange}
+          onShapeColorChange={handleShapeColorChange}
+          onStrokeChange={handleStrokeChange}
+          onBorderRadiusChange={handleBorderRadiusChange}
+          onEffectsChange={handleEffectsChange}
+        />
+      </div>
       <div 
         className="canvas-content-wrapper"
         ref={canvasWrapperRef}
       >
-        <div 
-          className={`canvas-content ${drawingMode ? 'drawing-mode' : ''}`}
-          ref={canvasContentRef}
-          style={{
-            transform: `scale(${zoomLevel})`,
-            transformOrigin: 'top left',
-            position: 'relative',
-            cursor: drawingMode ? 'crosshair' : 'default',
-          }}
-        >
-          {componentCode ? (
-            <CanvasRenderer 
-              code={componentCode} 
-              onCodeChange={handleCanvasChange}
-              zoomLevel={zoomLevel}
-            />
-          ) : (
-            <div className="canvas-empty">
-              <p>React 컴포넌트 파일(.tsx, .jsx)을 선택하면 여기에 렌더링됩니다.</p>
-            </div>
-          )}
+        {/* 내부 컨테이너 - 배경이 전체 스크롤 영역을 커버 */}
+        <div className="canvas-content-inner">
+          <div 
+            className={`canvas-content ${drawingMode ? 'drawing-mode' : ''}`}
+            ref={canvasContentRef}
+            style={{
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left',
+              position: 'relative',
+              cursor: drawingMode ? 'crosshair' : 'default',
+            }}
+          >
+            {componentCode ? (
+              <CanvasRenderer 
+                code={componentCode} 
+                onCodeChange={handleCanvasChange}
+                zoomLevel={zoomLevel}
+              />
+            ) : (
+              <div className="canvas-empty">
+                <p>React 컴포넌트 파일(.tsx, .jsx)을 선택하면 여기에 렌더링됩니다.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

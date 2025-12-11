@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ColorPicker } from './ColorPicker';
 import './Toolbar.css';
 
@@ -39,11 +39,23 @@ export function TextEditControls({
 }: TextEditControlsProps) {
   // fontSize input을 위한 로컬 상태
   const [fontSizeInput, setFontSizeInput] = useState(String(fontSize));
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   
   // fontSize prop이 변경되면 로컬 상태도 업데이트
   useEffect(() => {
     setFontSizeInput(String(fontSize));
   }, [fontSize]);
+
+  // 메뉴 위치 계산
+  useEffect(() => {
+    if (showTextColorMenu && textColorMenuRef?.current) {
+      const rect = textColorMenuRef.current.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+      });
+    }
+  }, [showTextColorMenu, textColorMenuRef]);
 
   // Enter 키 또는 blur 시 fontSize 적용
   const applyFontSize = () => {
@@ -184,10 +196,9 @@ export function TextEditControls({
           {showTextColorMenu && (
             <div 
               style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                marginTop: '4px', 
+                position: 'fixed', 
+                top: menuPosition.top, 
+                left: menuPosition.left, 
                 background: '#000000', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
