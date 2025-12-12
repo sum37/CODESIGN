@@ -1,13 +1,25 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import './Toolbar.css';
 
 interface ShapeMenuProps {
   showShapeMenu: boolean;
   onShapeSelect: (shapeType: string) => void;
-  pendingShapeType: string | null;
+  buttonRef?: React.RefObject<HTMLDivElement>;
 }
 
-export function ShapeMenu({ showShapeMenu, onShapeSelect, pendingShapeType }: ShapeMenuProps) {
+export function ShapeMenu({ showShapeMenu, onShapeSelect, buttonRef }: ShapeMenuProps) {
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (showShapeMenu && buttonRef?.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+      });
+    }
+  }, [showShapeMenu, buttonRef]);
+
   if (!showShapeMenu) return null;
 
   const handleShapeClick = (shapeType: string) => {
@@ -15,7 +27,14 @@ export function ShapeMenu({ showShapeMenu, onShapeSelect, pendingShapeType }: Sh
   };
 
   return (
-    <div className="canvas-shape-menu">
+    <div 
+      className="canvas-shape-menu"
+      style={{
+        position: 'fixed',
+        top: menuPosition.top,
+        left: menuPosition.left,
+      }}
+    >
       {/* Rectangles */}
       <div className="canvas-shape-menu-section">
         Rectangles

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { open } from '@tauri-apps/api/dialog';
+import logoImage from '../../assets/landingpage.png';
 import './SelectFolder.css';
 
 interface SelectFolderProps {
@@ -19,14 +20,14 @@ export function SelectFolder({ onFolderSelected, isLoading, setIsLoading }: Sele
       const selected = await open({
         directory: true,
         multiple: false,
-        title: '프로젝트 폴더 선택',
+        title: 'Select Project Folder',
       });
 
       if (selected && typeof selected === 'string') {
         onFolderSelected(selected);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '폴더 선택 중 오류가 발생했습니다.');
+      setError(err instanceof Error ? err.message : 'An error occurred while selecting folder.');
     } finally {
       setIsLoading(false);
     }
@@ -35,15 +36,15 @@ export function SelectFolder({ onFolderSelected, isLoading, setIsLoading }: Sele
   return (
     <div className="select-folder-container">
       <div className="select-folder-content">
-        <h1 className="select-folder-title">CODESIGN IDE</h1>
-        <p className="select-folder-subtitle">UI ↔ Code 양방향 수정 IDE</p>
+        <img src={logoImage} alt="CODESIGN" className="select-folder-logo" />
+        <p className="select-folder-subtitle">UI ↔ Code Bidirectional Editing IDE</p>
         
         <button
           className="select-folder-button"
           onClick={handleSelectFolder}
           disabled={isLoading}
         >
-          {isLoading ? '로딩 중...' : '프로젝트 폴더 선택'}
+          {isLoading ? 'Loading...' : 'Select Project Folder'}
         </button>
 
         {error && <div className="select-folder-error">{error}</div>}

@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ColorPicker } from './ColorPicker';
 import './Toolbar.css';
 
 interface TextEditControlsProps {
   fontSize: number;
   onFontSizeChange: (size: number) => void;
+  fontFamily: string;
+  onFontFamilyChange: (family: string) => void;
   textColor: string;
   onTextColorChange: (color: string) => void;
   fontWeight: 'normal' | 'bold';
@@ -20,6 +23,8 @@ interface TextEditControlsProps {
 export function TextEditControls({
   fontSize,
   onFontSizeChange,
+  fontFamily,
+  onFontFamilyChange,
   textColor,
   onTextColorChange,
   fontWeight,
@@ -32,6 +37,33 @@ export function TextEditControls({
   onToggleTextColorMenu,
   textColorMenuRef,
 }: TextEditControlsProps) {
+  // fontSize input을 위한 로컬 상태
+  const [fontSizeInput, setFontSizeInput] = useState(String(fontSize));
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  
+  // fontSize prop이 변경되면 로컬 상태도 업데이트
+  useEffect(() => {
+    setFontSizeInput(String(fontSize));
+  }, [fontSize]);
+
+  // 메뉴 위치 계산
+  useEffect(() => {
+    if (showTextColorMenu && textColorMenuRef?.current) {
+      const rect = textColorMenuRef.current.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+      });
+    }
+  }, [showTextColorMenu, textColorMenuRef]);
+
+  // Enter 키 또는 blur 시 fontSize 적용
+  const applyFontSize = () => {
+    const newSize = Math.max(8, Math.min(200, parseInt(fontSizeInput) || 16));
+    setFontSizeInput(String(newSize));
+    onFontSizeChange(newSize);
+  };
+
   const buttonStyle = {
     padding: '4px 8px',
     background: '#000000',
@@ -57,16 +89,29 @@ export function TextEditControls({
       {/* 첫 번째 줄: Font, Size */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <select 
+          value={fontFamily}
+          onChange={(e) => onFontFamilyChange(e.target.value)}
           style={{ 
             padding: '4px 8px', 
             background: '#000000', 
             color: '#ffffff', 
             border: '1px solid rgba(244, 114, 182, 0.2)', 
             borderRadius: '4px', 
-            fontSize: '14px' 
+            fontSize: '14px',
+            cursor: 'pointer',
+            minWidth: '120px'
           }}
         >
-          <option style={{ background: '#000000', color: '#ffffff' }}>Nanum Gothic</option>
+          <option value="Nanum Gothic" style={{ background: '#000000', color: '#ffffff' }}>Nanum Gothic</option>
+          <option value="Arial" style={{ background: '#000000', color: '#ffffff' }}>Arial</option>
+          <option value="Helvetica" style={{ background: '#000000', color: '#ffffff' }}>Helvetica</option>
+          <option value="Times New Roman" style={{ background: '#000000', color: '#ffffff' }}>Times New Roman</option>
+          <option value="Georgia" style={{ background: '#000000', color: '#ffffff' }}>Georgia</option>
+          <option value="Verdana" style={{ background: '#000000', color: '#ffffff' }}>Verdana</option>
+          <option value="Courier New" style={{ background: '#000000', color: '#ffffff' }}>Courier New</option>
+          <option value="sans-serif" style={{ background: '#000000', color: '#ffffff' }}>Sans-serif</option>
+          <option value="serif" style={{ background: '#000000', color: '#ffffff' }}>Serif</option>
+          <option value="monospace" style={{ background: '#000000', color: '#ffffff' }}>Monospace</option>
         </select>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <button 
@@ -80,9 +125,24 @@ export function TextEditControls({
             </svg>
           </button>
           <input 
-            type="number" 
-            value={fontSize}
-            onChange={(e) => onFontSizeChange(Math.max(8, Math.min(200, parseInt(e.target.value) || 16)))}
+            type="text" 
+            value={fontSizeInput}
+            onChange={(e) => {
+              // 숫자만 입력 가능하도록 필터링
+              const value = e.target.value.replace(/[^0-9]/g, '');
+              setFontSizeInput(value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                applyFontSize();
+                e.currentTarget.blur();
+              }
+            }}
+            onBlur={applyFontSize}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.currentTarget.select(); // 클릭 시 전체 선택
+            }}
             style={{ 
               width: '36px', 
               padding: '4px', 
@@ -136,38 +196,54 @@ export function TextEditControls({
           {showTextColorMenu && (
             <div 
               style={{ 
-                position: 'absolute', 
-                bottom: '100%', 
-                left: 0, 
-                marginBottom: '4px', 
+                position: 'fixed', 
+                top: menuPosition.top, 
+                left: menuPosition.left, 
                 background: '#000000', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)', 
-                zIndex: 1000, 
-                padding: '12px' 
+                zIndex: 1000,
               }}
-              onClick={(e) => e.stopPropagation()}
             >
-              <input
-                type="color"
-                value={textColor}
-                onChange={(e) => onTextColorChange(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                style={{ 
-                  height: '128px', 
-                  width: '100%', 
-                  cursor: 'pointer',
-                  border: 'none',
-                  outline: 'none',
-                  background: 'transparent'
+              <ColorPicker
+                color={textColor}
+                onChange={(newColor) => {
+                  // 편집 모드인지 확인
+                  const selection = window.getSelection();
+                  const activeElement = document.activeElement as HTMLElement;
+                  
+                  if (selection && !selection.isCollapsed && activeElement?.isContentEditable) {
+                    // 편집 모드: 선택된 텍스트에 색상 적용
+                    document.execCommand('foreColor', false, newColor);
+                    console.log('[TextEditControls] execCommand foreColor 실행:', newColor);
+                  }
+                  // 항상 toolbar 상태 업데이트 및 선택된 요소에 반영
+                  onTextColorChange(newColor);
                 }}
+                onClose={onToggleTextColorMenu}
               />
             </div>
           )}
         </div>
         <button 
-          onClick={onFontWeightToggle}
+          onMouseDown={(e) => {
+            // 편집 모드에서 포커스가 빠지지 않도록 방지
+            e.preventDefault();
+          }}
+          onClick={() => {
+            // 편집 모드인지 확인 (텍스트가 선택되어 있고, contentEditable 요소 내부인지)
+            const selection = window.getSelection();
+            const activeElement = document.activeElement as HTMLElement;
+            
+            if (selection && !selection.isCollapsed && activeElement?.isContentEditable) {
+              // 편집 모드: 선택된 텍스트에 bold 적용
+              document.execCommand('bold', false);
+              console.log('[TextEditControls] execCommand bold 실행');
+            }
+            // 항상 toolbar 상태 업데이트 및 선택된 요소에 반영
+            onFontWeightToggle();
+          }}
           style={{ 
             padding: '4px 12px', 
             background: fontWeight === 'bold' ? '#1f1f1f' : '#000000', 
@@ -184,7 +260,23 @@ export function TextEditControls({
           B
         </button>
         <button 
-          onClick={onFontStyleToggle}
+          onMouseDown={(e) => {
+            // 편집 모드에서 포커스가 빠지지 않도록 방지
+            e.preventDefault();
+          }}
+          onClick={() => {
+            // 편집 모드인지 확인 (텍스트가 선택되어 있고, contentEditable 요소 내부인지)
+            const selection = window.getSelection();
+            const activeElement = document.activeElement as HTMLElement;
+            
+            if (selection && !selection.isCollapsed && activeElement?.isContentEditable) {
+              // 편집 모드: 선택된 텍스트에 italic 적용
+              document.execCommand('italic', false);
+              console.log('[TextEditControls] execCommand italic 실행');
+            }
+            // 항상 toolbar 상태 업데이트 및 선택된 요소에 반영
+            onFontStyleToggle();
+          }}
           style={{ 
             padding: '4px 12px', 
             background: fontStyle === 'italic' ? '#1f1f1f' : '#000000', 
@@ -274,4 +366,5 @@ export function TextEditControls({
     </div>
   );
 }
+
 

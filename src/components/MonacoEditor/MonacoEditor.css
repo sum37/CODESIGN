@@ -8,7 +8,7 @@
 .monaco-editor-header {
   padding: 8px 16px;
   background: #252526;
-  border-bottom: 1px solid #3e3e42;
+  border-bottom: 1px solid rgba(244, 114, 182, 0.5);
   display: flex;
   align-items: center;
 }

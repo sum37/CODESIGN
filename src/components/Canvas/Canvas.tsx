@@ -1,9 +1,11 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useProjectStore } from '../../stores/projectStore';
 import { readFile } from '../../lib/fileSystem/fileSystem';
 import { CanvasRenderer } from './CanvasRenderer';
 import { useCanvasSync } from '../../hooks/useCanvasSync';
 import { Toolbar } from './components/Toolbar';
+import { useCanvasStore, DrawingModeType } from '../../stores/canvasStore';
+import { updateElementInCode, updateSvgFillColor, updateSvgStroke } from '../../lib/ast/codeModifier';
 import './Canvas.css';
 
 export function Canvas() {
@@ -38,12 +40,12 @@ export function Canvas() {
 
   const loadComponent = async (filePath: string) => {
     try {
-      console.log('컴포넌트 로드 시도:', filePath);
+      console.log('Loading component:', filePath);
       const content = await readFile(filePath);
-      console.log('컴포넌트 로드 성공:', filePath);
+      console.log('Component loaded successfully:', filePath);
       setComponentCode(content);
     } catch (error) {
-      console.error('컴포넌트 로드 실패:', filePath, error);
+      console.error('Failed to load component:', filePath, error);
       setComponentCode('');
     }
   };
@@ -118,27 +120,350 @@ export function Canvas() {
     setZoomLevel(1);
   };
   
-  // 텍스트 추가 핸들러
+  // Text box addition handler - activate drawing mode
   const handleAddText = () => {
-    // TODO: 텍스트 추가 로직 구현
-    console.log('텍스트 추가');
+    console.log('Text box drawing mode activated');
+    setDrawingMode('textbox');
   };
   
-  // 도형 선택 핸들러
+  // Shape drawing mode state
+  const { drawingMode, setDrawingMode, selectedElementId, selectedElementLoc } = useCanvasStore();
+  
+  // Shape selection handler - activate drawing mode
   const handleShapeSelect = (shapeType: string) => {
-    // TODO: 도형 추가 로직 구현
-    console.log('도형 선택:', shapeType);
+    console.log('Shape selected, drawing mode activated:', shapeType);
+    setDrawingMode(shapeType as DrawingModeType);
   };
   
-  // 이미지 선택 핸들러
+  // Image selection handler
   const handleImageSelect = (file: File) => {
     const reader = new FileReader();
     reader.onload = (event) => {
       const imageUrl = event.target?.result as string;
-      // TODO: 이미지 추가 로직 구현
-      console.log('이미지 추가:', imageUrl);
+      // TODO: Implement image addition logic
+      console.log('Image added:', imageUrl);
     };
     reader.readAsDataURL(file);
+  };
+
+  // fontSize 변경 핸들러
+  const handleFontSizeChange = (fontSize: number) => {
+    console.log('[Canvas] fontSize changed:', fontSize, 'selected element:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] No selected element or loc information');
+      return;
+    }
+    
+    // Update fontSize style of the element in code
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { style: { fontSize: `${fontSize}px` } },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] fontSize change completed');
+    }
+  };
+
+  // fontFamily 변경 핸들러
+  const handleFontFamilyChange = (fontFamily: string) => {
+    console.log('[Canvas] fontFamily changed:', fontFamily, 'selected element:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] No selected element or loc information');
+      return;
+    }
+    
+    // Update fontFamily style of the element in code
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { style: { fontFamily } },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] fontFamily change completed');
+    }
+  };
+
+  // fontWeight 변경 핸들러
+  const handleFontWeightChange = (fontWeight: 'normal' | 'bold') => {
+    console.log('[Canvas] fontWeight changed:', fontWeight, 'selected element:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] No selected element or loc information');
+      return;
+    }
+    
+    // Update fontWeight style of the element in code
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { style: { fontWeight } },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] fontWeight change completed');
+    }
+  };
+
+  // fontStyle 변경 핸들러
+  const handleFontStyleChange = (fontStyle: 'normal' | 'italic') => {
+    console.log('[Canvas] fontStyle changed:', fontStyle, 'selected element:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] No selected element or loc information');
+      return;
+    }
+    
+    // Update fontStyle style of the element in code
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { style: { fontStyle } },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] fontStyle change completed');
+    }
+  };
+
+  // textColor 변경 핸들러
+  const handleTextColorChange = (color: string) => {
+    console.log('[Canvas] textColor changed:', color, 'selected element:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] No selected element or loc information');
+      return;
+    }
+    
+    // Update color style of the element in code
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { style: { color } },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] textColor change completed');
+    }
+  };
+
+  // textAlign 변경 핸들러
+  const handleTextAlignChange = (textAlign: 'left' | 'center' | 'right') => {
+    console.log('[Canvas] textAlign changed:', textAlign, 'selected element:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] No selected element or loc information');
+      return;
+    }
+    
+    // Update textAlign style of the element in code
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { style: { textAlign } },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] textAlign change completed');
+    }
+  };
+
+  // shapeColor 변경 핸들러 (도형 배경색)
+  const handleShapeColorChange = (color: string) => {
+    console.log('[Canvas] shapeColor changed:', color, 'selected element:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] No selected element or loc information');
+      return;
+    }
+    
+    // Check if selected element is SVG (check tag at that location in code)
+    const lines = componentCode.split('\n');
+    const targetLine = selectedElementLoc.start.line - 1;
+    const column = selectedElementLoc.start.column;
+    
+    let isSvgShape = false;
+    if (targetLine >= 0 && targetLine < lines.length) {
+      const lineContent = lines[targetLine].substring(column);
+      isSvgShape = lineContent.trimStart().startsWith('<svg');
+    }
+    
+    let updatedCode: string;
+    
+    if (isSvgShape) {
+      // SVG shape: change fill attribute
+      console.log('[Canvas] SVG shape color changed');
+      updatedCode = updateSvgFillColor(componentCode, selectedElementLoc, color);
+    } else {
+      // div shape: change backgroundColor style
+      console.log('[Canvas] div shape color changed');
+      updatedCode = updateElementInCode(
+        componentCode,
+        selectedElementId,
+        { style: { backgroundColor: color } },
+        selectedElementLoc
+      );
+    }
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] shapeColor change completed');
+    }
+  };
+
+  // borderRadius 변경 핸들러 (둥근 사각형)
+  const handleBorderRadiusChange = (radius: number) => {
+    console.log('[Canvas] borderRadius changed:', { radius }, 'selected element:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] No selected element or loc information');
+      return;
+    }
+    
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { style: { borderRadius: `${radius}px` } },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      console.log('[Canvas] borderRadius change code updated');
+      setComponentCode(updatedCode);
+      handleCanvasChange(updatedCode);
+    }
+  };
+
+  // Effects 변경 핸들러
+  const handleEffectsChange = useCallback((
+    shadowType: 'none' | 'outer' | 'inner',
+    shadowColor: string,
+    shadowBlur: number,
+    shadowOffsetX: number,
+    shadowOffsetY: number,
+    opacity: number
+  ) => {
+    console.log('[Canvas] Effects changed:', { shadowType, shadowColor, shadowBlur, shadowOffsetX, shadowOffsetY, opacity });
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] No selected element or loc information');
+      return;
+    }
+    
+    // Create shadow style
+    const styleUpdates: Record<string, string> = {};
+    
+    if (shadowType === 'outer') {
+      // Outer shadow: positive offset (bottom, right)
+      const finalOffsetX = shadowOffsetX < 0 ? 0 : shadowOffsetX;
+      const finalOffsetY = shadowOffsetY < 0 ? 0 : shadowOffsetY;
+      styleUpdates.boxShadow = `${finalOffsetX}px ${finalOffsetY}px ${shadowBlur}px ${shadowColor}`;
+    } else if (shadowType === 'inner') {
+      // Inner shadow: positive offset (bottom, right)
+      const finalOffsetX = shadowOffsetX < 0 ? 0 : shadowOffsetX;
+      const finalOffsetY = shadowOffsetY < 0 ? 0 : shadowOffsetY;
+      styleUpdates.boxShadow = `inset ${finalOffsetX}px ${finalOffsetY}px ${shadowBlur}px ${shadowColor}`;
+    } else if (shadowType === 'none') {
+      // Set boxShadow to 'none' only when 'none'
+      styleUpdates.boxShadow = 'none';
+    }
+    
+    // Apply opacity (convert 0-100 to 0-1)
+    const opacityValue = opacity / 100;
+    styleUpdates.opacity = opacityValue.toString();
+    
+    // Update style of the element in code
+    const updatedCode = updateElementInCode(
+      componentCode,
+      selectedElementId,
+      { 
+        style: styleUpdates
+      },
+      selectedElementLoc
+    );
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] Effects change completed');
+    }
+  }, [selectedElementId, selectedElementLoc, componentCode, syncCanvasToCode]);
+
+  // stroke 변경 핸들러 (도형 테두리)
+  const handleStrokeChange = (strokeColor: string, strokeWidth: number) => {
+    console.log('[Canvas] stroke changed:', { strokeColor, strokeWidth }, 'selected element:', selectedElementId);
+    
+    if (!selectedElementId || !selectedElementLoc || !componentCode) {
+      console.warn('[Canvas] No selected element or loc information');
+      return;
+    }
+    
+    // Check if selected element is SVG (check tag at that location in code)
+    const lines = componentCode.split('\n');
+    const targetLine = selectedElementLoc.start.line - 1;
+    const column = selectedElementLoc.start.column;
+    
+    let isSvgShape = false;
+    if (targetLine >= 0 && targetLine < lines.length) {
+      const lineContent = lines[targetLine].substring(column);
+      isSvgShape = lineContent.trimStart().startsWith('<svg');
+    }
+    
+    let updatedCode: string;
+    
+    if (isSvgShape) {
+      // SVG shape: change stroke and stroke-width attributes
+      console.log('[Canvas] SVG shape stroke changed');
+      updatedCode = updateSvgStroke(componentCode, selectedElementLoc, strokeColor, strokeWidth);
+    } else {
+      // div shape: change border style
+      console.log('[Canvas] div shape stroke changed');
+      const borderStyle = strokeWidth > 0 ? `${strokeWidth}px solid ${strokeColor}` : 'none';
+      updatedCode = updateElementInCode(
+        componentCode,
+        selectedElementId,
+        { style: { border: borderStyle } },
+        selectedElementLoc
+      );
+    }
+    
+    if (updatedCode !== componentCode) {
+      setComponentCode(updatedCode);
+      syncCanvasToCode(updatedCode);
+      window.dispatchEvent(new CustomEvent('code-updated', { detail: updatedCode }));
+      console.log('[Canvas] stroke change completed');
+    }
   };
 
   return (
@@ -146,14 +471,11 @@ export function Canvas() {
       <div className="canvas-header">
         <h3>Canvas Preview</h3>
         <div className="canvas-header-controls">
-          {selectedFile && (
-            <span className="canvas-file-name">{selectedFile.split('/').pop()}</span>
-          )}
           <div className="canvas-zoom-controls">
             <button 
               className="canvas-zoom-button"
               onClick={() => setZoomLevel((prev) => Math.max(0.25, prev - 0.1))}
-              title="줌 아웃 (Ctrl/Cmd + 휠)"
+              title="Zoom Out (Ctrl/Cmd + Wheel)"
             >
               −
             </button>
@@ -161,14 +483,14 @@ export function Canvas() {
             <button 
               className="canvas-zoom-button"
               onClick={() => setZoomLevel((prev) => Math.min(3, prev + 0.1))}
-              title="줌 인 (Ctrl/Cmd + 휠)"
+              title="Zoom In (Ctrl/Cmd + Wheel)"
             >
               +
             </button>
             <button 
               className="canvas-zoom-reset"
               onClick={handleZoomReset}
-              title="줌 리셋"
+              title="Reset Zoom"
             >
               Reset
             </button>
@@ -176,23 +498,36 @@ export function Canvas() {
         </div>
       </div>
       
-      {/* 툴바 */}
-      <Toolbar
-        onAddText={handleAddText}
-        onShapeSelect={handleShapeSelect}
-        onImageSelect={handleImageSelect}
-      />
+      {/* 툴바 - 스크롤 가능한 wrapper로 감싸기 */}
+      <div className="canvas-toolbar-wrapper">
+        <Toolbar
+          onAddText={handleAddText}
+          onShapeSelect={handleShapeSelect}
+          onImageSelect={handleImageSelect}
+          onFontSizeChange={handleFontSizeChange}
+          onFontFamilyChange={handleFontFamilyChange}
+          onFontWeightChange={handleFontWeightChange}
+          onFontStyleChange={handleFontStyleChange}
+          onTextColorChange={handleTextColorChange}
+          onTextAlignChange={handleTextAlignChange}
+          onShapeColorChange={handleShapeColorChange}
+          onStrokeChange={handleStrokeChange}
+          onBorderRadiusChange={handleBorderRadiusChange}
+          onEffectsChange={handleEffectsChange}
+        />
+      </div>
       <div 
         className="canvas-content-wrapper"
         ref={canvasWrapperRef}
       >
         <div 
-          className="canvas-content"
+          className={`canvas-content ${drawingMode ? 'drawing-mode' : ''}`}
           ref={canvasContentRef}
           style={{
             transform: `scale(${zoomLevel})`,
             transformOrigin: 'top left',
             position: 'relative',
+            cursor: drawingMode ? 'crosshair' : 'default',
           }}
         >
           {componentCode ? (
@@ -203,9 +538,10 @@ export function Canvas() {
             />
           ) : (
             <div className="canvas-empty">
-              <p>React 컴포넌트 파일(.tsx, .jsx)을 선택하면 여기에 렌더링됩니다.</p>
+              <p>Select a React component file (.tsx, .jsx) to render it here.</p>
             </div>
           )}
+
         </div>
       </div>
     </div>

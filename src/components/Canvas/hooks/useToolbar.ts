@@ -20,6 +20,8 @@ export interface ToolbarState {
   setTextColor: (color: string) => void;
   fontSize: number;
   setFontSize: (size: number) => void;
+  fontFamily: string;
+  setFontFamily: (family: string) => void;
   fontWeight: 'normal' | 'bold';
   setFontWeight: (weight: 'normal' | 'bold') => void;
   fontStyle: 'normal' | 'italic';
@@ -41,6 +43,10 @@ export interface ToolbarState {
   setShowSendBackwardMenu: (show: boolean) => void;
   shapeColor: string;
   setShapeColor: (color: string) => void;
+  strokeColor: string;
+  setStrokeColor: (color: string) => void;
+  strokeWidth: number;
+  setStrokeWidth: (width: number) => void;
   shapeBorderRadius: number;
   setShapeBorderRadius: (radius: number) => void;
   borderRadiusInputValue: string;
@@ -51,6 +57,20 @@ export interface ToolbarState {
   bringForwardMenuRef: React.RefObject<HTMLDivElement>;
   sendBackwardMenuRef: React.RefObject<HTMLDivElement>;
   borderRadiusInputRef: React.RefObject<HTMLInputElement>;
+  
+  // Effects 관련
+  shadowType: 'none' | 'outer' | 'inner';
+  setShadowType: (type: 'none' | 'outer' | 'inner') => void;
+  shadowColor: string;
+  setShadowColor: (color: string) => void;
+  shadowBlur: number;
+  setShadowBlur: (blur: number) => void;
+  shadowOffsetX: number;
+  setShadowOffsetX: (offset: number) => void;
+  shadowOffsetY: number;
+  setShadowOffsetY: (offset: number) => void;
+  opacity: number;
+  setOpacity: (opacity: number) => void;
 }
 
 export function useToolbar(): ToolbarState {
@@ -67,6 +87,7 @@ export function useToolbar(): ToolbarState {
   const [showTextColorMenu, setShowTextColorMenu] = useState(false);
   const [textColor, setTextColor] = useState('#000000');
   const [fontSize, setFontSize] = useState(16);
+  const [fontFamily, setFontFamily] = useState('Nanum Gothic');
   const [fontWeight, setFontWeight] = useState<'normal' | 'bold'>('normal');
   const [fontStyle, setFontStyle] = useState<'normal' | 'italic'>('normal');
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('left');
@@ -79,6 +100,8 @@ export function useToolbar(): ToolbarState {
   const [showBringForwardMenu, setShowBringForwardMenu] = useState(false);
   const [showSendBackwardMenu, setShowSendBackwardMenu] = useState(false);
   const [shapeColor, setShapeColor] = useState('#f9a8d4');
+  const [strokeColor, setStrokeColor] = useState('#000000');
+  const [strokeWidth, setStrokeWidth] = useState(1);
   const [shapeBorderRadius, setShapeBorderRadius] = useState(0);
   const [borderRadiusInputValue, setBorderRadiusInputValue] = useState('0');
   const shapeColorMenuRef = useRef<HTMLDivElement>(null);
@@ -87,6 +110,15 @@ export function useToolbar(): ToolbarState {
   const bringForwardMenuRef = useRef<HTMLDivElement>(null);
   const sendBackwardMenuRef = useRef<HTMLDivElement>(null);
   const borderRadiusInputRef = useRef<HTMLInputElement>(null);
+  
+  // Effects 관련
+  const [shadowType, setShadowType] = useState<'none' | 'outer' | 'inner'>('none');
+  const [shadowColor, setShadowColor] = useState('#000000');
+  const [shadowBlur, setShadowBlur] = useState(10);
+  const [shadowOffsetX, setShadowOffsetX] = useState(5); // 기본값: 오른쪽 방향
+  const [shadowOffsetY, setShadowOffsetY] = useState(5); // 기본값: 아래쪽 방향
+  const [opacity, setOpacity] = useState(100);
+  
   
   // 외부 클릭 시 메뉴 닫기
   useEffect(() => {
@@ -143,6 +175,8 @@ export function useToolbar(): ToolbarState {
     setTextColor,
     fontSize,
     setFontSize,
+    fontFamily,
+    setFontFamily,
     fontWeight,
     setFontWeight,
     fontStyle,
@@ -164,6 +198,10 @@ export function useToolbar(): ToolbarState {
     setShowSendBackwardMenu,
     shapeColor,
     setShapeColor,
+    strokeColor,
+    setStrokeColor,
+    strokeWidth,
+    setStrokeWidth,
     shapeBorderRadius,
     setShapeBorderRadius,
     borderRadiusInputValue,
@@ -174,6 +212,21 @@ export function useToolbar(): ToolbarState {
     bringForwardMenuRef,
     sendBackwardMenuRef,
     borderRadiusInputRef,
+    
+    // Effects 관련
+    shadowType,
+    setShadowType,
+    shadowColor,
+    setShadowColor,
+    shadowBlur,
+    setShadowBlur,
+    shadowOffsetX,
+    setShadowOffsetX,
+    shadowOffsetY,
+    setShadowOffsetY,
+    opacity,
+    setOpacity,
   };
 }
+
 

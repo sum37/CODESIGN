@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { ColorPicker } from './ColorPicker';
 import './Toolbar.css';
 
 interface ShapeEditControlsProps {
   shapeColor: string;
   onShapeColorChange: (color: string) => void;
+  strokeColor: string;
+  onStrokeColorChange: (color: string) => void;
+  strokeWidth: number;
+  onStrokeWidthChange: (width: number) => void;
   shapeBorderRadius: number;
   onShapeBorderRadiusChange: (radius: number) => void;
   borderRadiusInputValue: string;
@@ -24,11 +29,35 @@ interface ShapeEditControlsProps {
   bringForwardMenuRef: React.RefObject<HTMLDivElement>;
   sendBackwardMenuRef: React.RefObject<HTMLDivElement>;
   borderRadiusInputRef: React.RefObject<HTMLInputElement>;
+  isBorderRadiusEnabled?: boolean;
+  maxBorderRadius?: number;
+  
+  // 잠금 기능
+  isLocked: boolean;
+  onToggleLock: () => void;
+  
+  // Effects 기능
+  shadowType: 'none' | 'outer' | 'inner';
+  onShadowTypeChange: (type: 'none' | 'outer' | 'inner') => void;
+  shadowColor: string;
+  onShadowColorChange: (color: string) => void;
+  shadowBlur: number;
+  onShadowBlurChange: (blur: number) => void;
+  shadowOffsetX: number;
+  onShadowOffsetXChange: (offset: number) => void;
+  shadowOffsetY: number;
+  onShadowOffsetYChange: (offset: number) => void;
+  opacity: number;
+  onOpacityChange: (opacity: number) => void;
 }
 
 export function ShapeEditControls({
   shapeColor,
   onShapeColorChange,
+  strokeColor,
+  onStrokeColorChange,
+  strokeWidth,
+  onStrokeWidthChange,
   shapeBorderRadius,
   onShapeBorderRadiusChange,
   borderRadiusInputValue,
@@ -49,7 +78,65 @@ export function ShapeEditControls({
   bringForwardMenuRef,
   sendBackwardMenuRef,
   borderRadiusInputRef,
+  isBorderRadiusEnabled = false,
+  maxBorderRadius = 100,
+  isLocked,
+  onToggleLock,
+  shadowType,
+  onShadowTypeChange,
+  shadowColor,
+  onShadowColorChange,
+  shadowBlur,
+  onShadowBlurChange,
+  shadowOffsetX,
+  onShadowOffsetXChange,
+  shadowOffsetY,
+  onShadowOffsetYChange,
+  opacity,
+  onOpacityChange,
 }: ShapeEditControlsProps) {
+  // 각 메뉴의 fixed position 계산
+  const [shapeColorMenuPosition, setShapeColorMenuPosition] = useState({ top: 0, left: 0 });
+  const [effectsMenuPosition, setEffectsMenuPosition] = useState({ top: 0, left: 0 });
+  const [strokeMenuPosition, setStrokeMenuPosition] = useState({ top: 0, left: 0 });
+  const [bringForwardMenuPosition, setBringForwardMenuPosition] = useState({ top: 0, left: 0 });
+  const [sendBackwardMenuPosition, setSendBackwardMenuPosition] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (showShapeColorMenu && shapeColorMenuRef?.current) {
+      const rect = shapeColorMenuRef.current.getBoundingClientRect();
+      setShapeColorMenuPosition({ top: rect.bottom + 4, left: rect.left });
+    }
+  }, [showShapeColorMenu]);
+
+  useEffect(() => {
+    if (showEffectsMenu && effectsMenuRef?.current) {
+      const rect = effectsMenuRef.current.getBoundingClientRect();
+      setEffectsMenuPosition({ top: rect.bottom + 4, left: rect.left });
+    }
+  }, [showEffectsMenu]);
+
+  useEffect(() => {
+    if (showStrokeMenu && strokeMenuRef?.current) {
+      const rect = strokeMenuRef.current.getBoundingClientRect();
+      setStrokeMenuPosition({ top: rect.bottom + 4, left: rect.left });
+    }
+  }, [showStrokeMenu]);
+
+  useEffect(() => {
+    if (showBringForwardMenu && bringForwardMenuRef?.current) {
+      const rect = bringForwardMenuRef.current.getBoundingClientRect();
+      setBringForwardMenuPosition({ top: rect.bottom + 4, left: rect.left });
+    }
+  }, [showBringForwardMenu]);
+
+  useEffect(() => {
+    if (showSendBackwardMenu && sendBackwardMenuRef?.current) {
+      const rect = sendBackwardMenuRef.current.getBoundingClientRect();
+      setSendBackwardMenuPosition({ top: rect.bottom + 4, left: rect.left });
+    }
+  }, [showSendBackwardMenu]);
+
   const buttonStyle = {
     padding: '4px 12px',
     background: '#000000',
@@ -81,13 +168,14 @@ export function ShapeEditControls({
     }
   };
 
-  const handleBorderRadiusBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleBorderRadiusBlur = () => {
+    const value = borderRadiusInputValue;
     if (value === '' || isNaN(Number(value))) {
       onBorderRadiusInputChange('0');
       onShapeBorderRadiusChange(0);
     } else {
-      const finalRadius = Math.max(0, Number(value));
+      // Figma 방식: 최대값을 초과하지 않도록 제한
+      const finalRadius = Math.min(Math.max(0, Number(value)), maxBorderRadius);
       onShapeBorderRadiusChange(finalRadius);
       onBorderRadiusInputChange(finalRadius.toString());
     }
@@ -112,30 +200,20 @@ export function ShapeEditControls({
           {showShapeColorMenu && (
             <div 
               style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                marginTop: '4px', 
+                position: 'fixed', 
+                top: shapeColorMenuPosition.top, 
+                left: shapeColorMenuPosition.left, 
                 background: '#000000', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)', 
-                zIndex: 1000, 
-                padding: '12px' 
+                zIndex: 1000,
               }}
             >
-              <input
-                type="color"
-                value={shapeColor}
-                onChange={(e) => onShapeColorChange(e.target.value)}
-                style={{ 
-                  height: '128px', 
-                  width: '100%', 
-                  cursor: 'pointer',
-                  border: 'none',
-                  outline: 'none',
-                  background: 'transparent'
-                }}
+              <ColorPicker
+                color={shapeColor}
+                onChange={onShapeColorChange}
+                onClose={onToggleShapeColorMenu}
               />
             </div>
           )}
@@ -156,10 +234,9 @@ export function ShapeEditControls({
           {showEffectsMenu && (
             <div 
               style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                marginTop: '4px', 
+                position: 'fixed', 
+                top: effectsMenuPosition.top, 
+                left: effectsMenuPosition.left, 
                 background: '#000000', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
@@ -172,65 +249,172 @@ export function ShapeEditControls({
                 Shadow Effects
               </div>
               <button
-                onClick={() => onToggleEffectsMenu()}
+                onClick={() => {
+                  onShadowTypeChange('none');
+                }}
                 style={{ 
                   width: '100%', 
                   padding: '8px 12px', 
                   textAlign: 'left', 
                   fontSize: '14px', 
-                  color: '#ffffff',
-                  background: 'transparent',
+                  color: shadowType === 'none' ? '#f9a8d4' : '#ffffff',
+                  background: shadowType === 'none' ? '#1f1f1f' : 'transparent',
                   border: 'none',
                   cursor: 'pointer'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = '#1f1f1f'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                onMouseLeave={(e) => e.currentTarget.style.background = shadowType === 'none' ? '#1f1f1f' : 'transparent'}
               >
                 None
               </button>
               <button
-                onClick={() => onToggleEffectsMenu()}
+                onClick={() => {
+                  onShadowTypeChange('outer');
+                }}
                 style={{ 
                   width: '100%', 
                   padding: '8px 12px', 
                   textAlign: 'left', 
                   fontSize: '14px', 
-                  color: '#ffffff',
-                  background: 'transparent',
+                  color: shadowType === 'outer' ? '#f9a8d4' : '#ffffff',
+                  background: shadowType === 'outer' ? '#1f1f1f' : 'transparent',
                   border: 'none',
                   cursor: 'pointer'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = '#1f1f1f'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                onMouseLeave={(e) => e.currentTarget.style.background = shadowType === 'outer' ? '#1f1f1f' : 'transparent'}
               >
                 Outer Shadow
               </button>
               <button
-                onClick={() => onToggleEffectsMenu()}
+                onClick={() => {
+                  onShadowTypeChange('inner');
+                }}
                 style={{ 
                   width: '100%', 
                   padding: '8px 12px', 
                   textAlign: 'left', 
                   fontSize: '14px', 
-                  color: '#ffffff',
-                  background: 'transparent',
+                  color: shadowType === 'inner' ? '#f9a8d4' : '#ffffff',
+                  background: shadowType === 'inner' ? '#1f1f1f' : 'transparent',
                   border: 'none',
                   cursor: 'pointer'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = '#1f1f1f'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                onMouseLeave={(e) => e.currentTarget.style.background = shadowType === 'inner' ? '#1f1f1f' : 'transparent'}
               >
                 Inner Shadow
               </button>
+              {shadowType !== 'none' && (
+                <div style={{ padding: '12px', borderTop: '1px solid rgba(244, 114, 182, 0.2)' }}>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>Shadow Color:</label>
+                    <ColorPicker
+                      color={shadowColor}
+                      onChange={onShadowColorChange}
+                      onClose={() => {}}
+                    />
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '12px', color: '#9ca3af' }}>Blur:</label>
+                      <span style={{ fontSize: '12px', color: '#ffffff' }}>{shadowBlur}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="50"
+                      step="1"
+                      value={shadowBlur}
+                      onChange={(e) => onShadowBlurChange(Number(e.target.value))}
+                      style={{ 
+                        width: '100%', 
+                        height: '8px', 
+                        background: '#1f1f1f', 
+                        borderRadius: '4px', 
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '12px', color: '#9ca3af' }}>Offset X:</label>
+                      <span style={{ fontSize: '12px', color: '#ffffff' }}>{shadowOffsetX}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="50"
+                      step="1"
+                      value={shadowOffsetX}
+                      onChange={(e) => onShadowOffsetXChange(Number(e.target.value))}
+                      style={{ 
+                        width: '100%', 
+                        height: '8px', 
+                        background: '#1f1f1f', 
+                        borderRadius: '4px', 
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '12px', color: '#9ca3af' }}>Offset Y:</label>
+                      <span style={{ fontSize: '12px', color: '#ffffff' }}>{shadowOffsetY}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="50"
+                      step="1"
+                      value={shadowOffsetY}
+                      onChange={(e) => onShadowOffsetYChange(Number(e.target.value))}
+                      style={{ 
+                        width: '100%', 
+                        height: '8px', 
+                        background: '#1f1f1f', 
+                        borderRadius: '4px', 
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '12px', color: '#9ca3af' }}>Opacity:</label>
+                      <span style={{ fontSize: '12px', color: '#ffffff' }}>{opacity}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={opacity}
+                      onChange={(e) => onOpacityChange(Number(e.target.value))}
+                      style={{ 
+                        width: '100%', 
+                        height: '8px', 
+                        background: '#1f1f1f', 
+                        borderRadius: '4px', 
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
         
         <button
+          onClick={onToggleLock}
           style={{ 
             width: '32px', 
             height: '32px', 
-            background: '#000000', 
+            background: isLocked ? '#f9a8d4' : '#000000', 
             borderRadius: '4px', 
             fontSize: '14px', 
             border: '1px solid rgba(244, 114, 182, 0.2)', 
@@ -242,11 +426,17 @@ export function ShapeEditControls({
           }}
           onMouseEnter={buttonHover}
           onMouseLeave={buttonLeave}
-          title="Lock"
+          title={isLocked ? "Unlock" : "Lock"}
         >
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-          </svg>
+          {isLocked ? (
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          ) : (
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+            </svg>
+          )}
         </button>
       </div>
       
@@ -267,45 +457,40 @@ export function ShapeEditControls({
           {showStrokeMenu && (
             <div 
               style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                marginTop: '4px', 
+                position: 'fixed', 
+                top: strokeMenuPosition.top, 
+                left: strokeMenuPosition.left, 
                 background: '#000000', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)', 
                 zIndex: 1000, 
                 minWidth: '220px',
-                padding: '12px'
               }}
             >
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ fontSize: '12px', color: '#ffffff', display: 'block', marginBottom: '8px' }}>Stroke Color:</label>
-                <input
-                  type="color"
-                  defaultValue="#000000"
-                  style={{ 
-                    width: '100%', 
-                    height: '40px', 
-                    cursor: 'pointer',
-                    border: 'none',
-                    outline: 'none',
-                    background: 'transparent'
-                  }}
-                />
+              {/* Stroke Color Section */}
+              <div style={{ padding: '12px 12px 0' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>Stroke Color:</label>
               </div>
-              <div style={{ marginBottom: '8px' }}>
+              <ColorPicker
+                color={strokeColor}
+                onChange={onStrokeColorChange}
+                onClose={onToggleStrokeMenu}
+              />
+              
+              {/* Stroke Width Section */}
+              <div style={{ padding: '0 12px 12px', borderTop: '1px solid rgba(244, 114, 182, 0.1)', marginTop: '8px', paddingTop: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <label style={{ fontSize: '12px', color: '#ffffff' }}>Stroke Width:</label>
-                  <span style={{ fontSize: '12px', color: '#9ca3af' }}>0px</span>
+                  <label style={{ fontSize: '12px', color: '#9ca3af' }}>Stroke Width:</label>
+                  <span style={{ fontSize: '12px', color: '#ffffff' }}>{strokeWidth}px</span>
                 </div>
                 <input
                   type="range"
                   min="0"
                   max="20"
                   step="1"
-                  defaultValue="0"
+                  value={strokeWidth}
+                  onChange={(e) => onStrokeWidthChange(Number(e.target.value))}
                   style={{ 
                     width: '100%', 
                     height: '8px', 
@@ -316,69 +501,90 @@ export function ShapeEditControls({
                   }}
                 />
               </div>
-              <button
-                onClick={() => onToggleStrokeMenu()}
-                style={{ 
-                  width: '100%', 
-                  padding: '4px 8px', 
-                  fontSize: '12px', 
-                  background: '#1f1f1f', 
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#2f2f2f'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#1f1f1f'}
-              >
-                Remove Stroke
-              </button>
+              
+              {/* Remove Stroke Button */}
+              <div style={{ padding: '0 12px 12px' }}>
+                <button
+                  onClick={() => {
+                    onStrokeWidthChange(0);
+                    onToggleStrokeMenu();
+                  }}
+                  style={{ 
+                    width: '100%', 
+                    padding: '6px 8px', 
+                    fontSize: '12px', 
+                    background: '#1f1f1f', 
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#2f2f2f'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#1f1f1f'}
+                >
+                  Remove Stroke
+                </button>
+              </div>
             </div>
           )}
         </div>
         
-        {/* Corner Radius */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px', color: '#ffffff' }}>Corner Radius:</span>
-            <input
-              ref={borderRadiusInputRef}
-              type="text"
-              value={borderRadiusInputValue}
-              onChange={handleBorderRadiusInputChange}
-              onBlur={handleBorderRadiusBlur}
-              style={{ 
-                width: '64px', 
-                padding: '4px 8px', 
-                background: '#000000', 
-                border: '1px solid rgba(244, 114, 182, 0.2)', 
-                borderRadius: '4px', 
-                fontSize: '14px',
-                color: '#ffffff'
-              }}
-            />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={shapeBorderRadius}
-              onChange={(e) => {
-                const newRadius = Number(e.target.value);
-                onShapeBorderRadiusChange(newRadius);
-                onBorderRadiusInputChange(newRadius.toString());
-              }}
-              style={{ 
-                flex: 1, 
-                height: '8px', 
-                background: '#1f1f1f', 
-                borderRadius: '4px', 
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            />
-          </div>
+        {/* Corner Radius - 둥근 사각형 선택 시에만 활성화 */}
+        <div 
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            opacity: isBorderRadiusEnabled ? 1 : 0.4,
+            pointerEvents: isBorderRadiusEnabled ? 'auto' : 'none',
+          }}
+          title={isBorderRadiusEnabled ? '' : 'Select a rounded rectangle'}
+        >
+          <span style={{ fontSize: '14px', color: isBorderRadiusEnabled ? '#ffffff' : '#666666', whiteSpace: 'nowrap' }}>Corner Radius:</span>
+          <input
+            ref={borderRadiusInputRef}
+            type="text"
+            value={borderRadiusInputValue}
+            onChange={handleBorderRadiusInputChange}
+            onBlur={() => handleBorderRadiusBlur()}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === 'Enter') {
+                handleBorderRadiusBlur();
+              }
+            }}
+            disabled={!isBorderRadiusEnabled}
+            style={{ 
+              width: '50px', 
+              padding: '4px 8px', 
+              background: isBorderRadiusEnabled ? '#000000' : '#1a1a1a', 
+              border: '1px solid rgba(244, 114, 182, 0.2)', 
+              borderRadius: '4px', 
+              fontSize: '14px',
+              color: isBorderRadiusEnabled ? '#ffffff' : '#666666',
+              cursor: isBorderRadiusEnabled ? 'text' : 'not-allowed',
+            }}
+          />
+          <input
+            type="range"
+            min="0"
+            max={maxBorderRadius}
+            value={Math.min(shapeBorderRadius, maxBorderRadius)}
+            onChange={(e) => {
+              const newRadius = Math.min(Number(e.target.value), maxBorderRadius);
+              onShapeBorderRadiusChange(newRadius);
+              onBorderRadiusInputChange(newRadius.toString());
+            }}
+            disabled={!isBorderRadiusEnabled}
+            style={{ 
+              width: '80px', 
+              height: '8px', 
+              background: '#1f1f1f', 
+              borderRadius: '4px', 
+              outline: 'none',
+              cursor: isBorderRadiusEnabled ? 'pointer' : 'not-allowed',
+            }}
+          />
         </div>
       </div>
       
@@ -404,10 +610,9 @@ export function ShapeEditControls({
           {showBringForwardMenu && (
             <div 
               style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                marginTop: '4px', 
+                position: 'fixed', 
+                top: bringForwardMenuPosition.top, 
+                left: bringForwardMenuPosition.left, 
                 background: '#000000', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
@@ -475,10 +680,9 @@ export function ShapeEditControls({
           {showSendBackwardMenu && (
             <div 
               style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                marginTop: '4px', 
+                position: 'fixed', 
+                top: sendBackwardMenuPosition.top, 
+                left: sendBackwardMenuPosition.left, 
                 background: '#000000', 
                 border: '1px solid rgba(244, 114, 182, 0.2)', 
                 borderRadius: '4px', 
@@ -544,7 +748,7 @@ export function ShapeEditControls({
             opacity: 0.5
           }}
           disabled
-          title="Group (Ctrl+G) - 최소 2개 이상 선택 필요"
+          title="Group (Ctrl+G) - Select at least 2 elements"
         >
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -577,4 +781,7 @@ export function ShapeEditControls({
     </div>
   );
 }
+
+
+
 
