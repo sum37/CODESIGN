@@ -37,10 +37,6 @@ export interface ToolbarState {
   setShowEffectsMenu: (show: boolean) => void;
   showStrokeMenu: boolean;
   setShowStrokeMenu: (show: boolean) => void;
-  showBringForwardMenu: boolean;
-  setShowBringForwardMenu: (show: boolean) => void;
-  showSendBackwardMenu: boolean;
-  setShowSendBackwardMenu: (show: boolean) => void;
   shapeColor: string;
   setShapeColor: (color: string) => void;
   strokeColor: string;
@@ -54,8 +50,6 @@ export interface ToolbarState {
   shapeColorMenuRef: React.RefObject<HTMLDivElement>;
   effectsMenuRef: React.RefObject<HTMLDivElement>;
   strokeMenuRef: React.RefObject<HTMLDivElement>;
-  bringForwardMenuRef: React.RefObject<HTMLDivElement>;
-  sendBackwardMenuRef: React.RefObject<HTMLDivElement>;
   borderRadiusInputRef: React.RefObject<HTMLInputElement>;
   
   // Effects 관련
@@ -97,8 +91,6 @@ export function useToolbar(): ToolbarState {
   const [showShapeColorMenu, setShowShapeColorMenu] = useState(false);
   const [showEffectsMenu, setShowEffectsMenu] = useState(false);
   const [showStrokeMenu, setShowStrokeMenu] = useState(false);
-  const [showBringForwardMenu, setShowBringForwardMenu] = useState(false);
-  const [showSendBackwardMenu, setShowSendBackwardMenu] = useState(false);
   const [shapeColor, setShapeColor] = useState('#f9a8d4');
   const [strokeColor, setStrokeColor] = useState('#000000');
   const [strokeWidth, setStrokeWidth] = useState(1);
@@ -107,16 +99,14 @@ export function useToolbar(): ToolbarState {
   const shapeColorMenuRef = useRef<HTMLDivElement>(null);
   const effectsMenuRef = useRef<HTMLDivElement>(null);
   const strokeMenuRef = useRef<HTMLDivElement>(null);
-  const bringForwardMenuRef = useRef<HTMLDivElement>(null);
-  const sendBackwardMenuRef = useRef<HTMLDivElement>(null);
   const borderRadiusInputRef = useRef<HTMLInputElement>(null);
   
   // Effects 관련
   const [shadowType, setShadowType] = useState<'none' | 'outer' | 'inner'>('none');
   const [shadowColor, setShadowColor] = useState('#000000');
   const [shadowBlur, setShadowBlur] = useState(10);
-  const [shadowOffsetX, setShadowOffsetX] = useState(5); // 기본값: 오른쪽 방향
-  const [shadowOffsetY, setShadowOffsetY] = useState(5); // 기본값: 아래쪽 방향
+  const [shadowOffsetX, setShadowOffsetX] = useState(5);
+  const [shadowOffsetY, setShadowOffsetY] = useState(5);
   const [opacity, setOpacity] = useState(100);
   
   
@@ -138,22 +128,16 @@ export function useToolbar(): ToolbarState {
       if (strokeMenuRef.current && !strokeMenuRef.current.contains(event.target as Node)) {
         setShowStrokeMenu(false);
       }
-      if (bringForwardMenuRef.current && !bringForwardMenuRef.current.contains(event.target as Node)) {
-        setShowBringForwardMenu(false);
-      }
-      if (sendBackwardMenuRef.current && !sendBackwardMenuRef.current.contains(event.target as Node)) {
-        setShowSendBackwardMenu(false);
-      }
     };
     
-    if (showShapeMenu || showTextColorMenu || showShapeColorMenu || showEffectsMenu || showStrokeMenu || showBringForwardMenu || showSendBackwardMenu) {
+    if (showShapeMenu || showTextColorMenu || showShapeColorMenu || showEffectsMenu || showStrokeMenu) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showShapeMenu, showTextColorMenu, showShapeColorMenu, showEffectsMenu, showStrokeMenu, showBringForwardMenu, showSendBackwardMenu]);
+  }, [showShapeMenu, showTextColorMenu, showShapeColorMenu, showEffectsMenu, showStrokeMenu]);
   
   return {
     // 도형 메뉴
@@ -192,10 +176,6 @@ export function useToolbar(): ToolbarState {
     setShowEffectsMenu,
     showStrokeMenu,
     setShowStrokeMenu,
-    showBringForwardMenu,
-    setShowBringForwardMenu,
-    showSendBackwardMenu,
-    setShowSendBackwardMenu,
     shapeColor,
     setShapeColor,
     strokeColor,
@@ -209,8 +189,6 @@ export function useToolbar(): ToolbarState {
     shapeColorMenuRef,
     effectsMenuRef,
     strokeMenuRef,
-    bringForwardMenuRef,
-    sendBackwardMenuRef,
     borderRadiusInputRef,
     
     // Effects 관련
@@ -228,5 +206,3 @@ export function useToolbar(): ToolbarState {
     setOpacity,
   };
 }
-
-

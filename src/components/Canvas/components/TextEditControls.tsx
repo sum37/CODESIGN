@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ColorPicker } from './ColorPicker';
 import './Toolbar.css';
 
@@ -37,27 +37,20 @@ export function TextEditControls({
   onToggleTextColorMenu,
   textColorMenuRef,
 }: TextEditControlsProps) {
-  // fontSize input을 위한 로컬 상태
   const [fontSizeInput, setFontSizeInput] = useState(String(fontSize));
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   
-  // fontSize prop이 변경되면 로컬 상태도 업데이트
   useEffect(() => {
     setFontSizeInput(String(fontSize));
   }, [fontSize]);
 
-  // 메뉴 위치 계산
   useEffect(() => {
     if (showTextColorMenu && textColorMenuRef?.current) {
       const rect = textColorMenuRef.current.getBoundingClientRect();
-      setMenuPosition({
-        top: rect.bottom + 4,
-        left: rect.left,
-      });
+      setMenuPosition({ top: rect.bottom + 4, left: rect.left });
     }
   }, [showTextColorMenu, textColorMenuRef]);
 
-  // Enter 키 또는 blur 시 fontSize 적용
   const applyFontSize = () => {
     const newSize = Math.max(8, Math.min(200, parseInt(fontSizeInput) || 16));
     setFontSizeInput(String(newSize));
@@ -85,8 +78,8 @@ export function TextEditControls({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '200px' }}>
-      {/* 첫 번째 줄: Font, Size */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      {/* 1행: Font Family, Font Size */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <select 
           value={fontFamily}
@@ -97,128 +90,92 @@ export function TextEditControls({
             color: '#ffffff', 
             border: '1px solid rgba(244, 114, 182, 0.2)', 
             borderRadius: '4px', 
-            fontSize: '14px',
+            fontSize: '13px',
             cursor: 'pointer',
-            minWidth: '120px'
+            minWidth: '110px'
           }}
         >
-          <option value="Nanum Gothic" style={{ background: '#000000', color: '#ffffff' }}>Nanum Gothic</option>
-          <option value="Arial" style={{ background: '#000000', color: '#ffffff' }}>Arial</option>
-          <option value="Helvetica" style={{ background: '#000000', color: '#ffffff' }}>Helvetica</option>
-          <option value="Times New Roman" style={{ background: '#000000', color: '#ffffff' }}>Times New Roman</option>
-          <option value="Georgia" style={{ background: '#000000', color: '#ffffff' }}>Georgia</option>
-          <option value="Verdana" style={{ background: '#000000', color: '#ffffff' }}>Verdana</option>
-          <option value="Courier New" style={{ background: '#000000', color: '#ffffff' }}>Courier New</option>
-          <option value="sans-serif" style={{ background: '#000000', color: '#ffffff' }}>Sans-serif</option>
-          <option value="serif" style={{ background: '#000000', color: '#ffffff' }}>Serif</option>
-          <option value="monospace" style={{ background: '#000000', color: '#ffffff' }}>Monospace</option>
+          <option value="Nanum Gothic">Nanum Gothic</option>
+          <option value="Arial">Arial</option>
+          <option value="Helvetica">Helvetica</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Courier New">Courier New</option>
+          <option value="sans-serif">Sans-serif</option>
+          <option value="serif">Serif</option>
+          <option value="monospace">Monospace</option>
         </select>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
           <button 
-            style={buttonStyle}
+            style={{ ...buttonStyle, padding: '4px 6px' }}
             onMouseEnter={buttonHover}
             onMouseLeave={(e) => buttonLeave(e)}
             onClick={() => onFontSizeChange(Math.max(8, fontSize - 1))}
           >
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
             </svg>
           </button>
           <input 
             type="text" 
             value={fontSizeInput}
-            onChange={(e) => {
-              // 숫자만 입력 가능하도록 필터링
-              const value = e.target.value.replace(/[^0-9]/g, '');
-              setFontSizeInput(value);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                applyFontSize();
-                e.currentTarget.blur();
-              }
-            }}
+            onChange={(e) => setFontSizeInput(e.target.value.replace(/[^0-9]/g, ''))}
+            onKeyDown={(e) => { if (e.key === 'Enter') { applyFontSize(); e.currentTarget.blur(); } }}
             onBlur={applyFontSize}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.currentTarget.select(); // 클릭 시 전체 선택
-            }}
+            onClick={(e) => { e.stopPropagation(); e.currentTarget.select(); }}
             style={{ 
-              width: '36px', 
-              padding: '4px', 
-              background: '#000000', 
-              color: '#ffffff', 
+              width: '32px', padding: '4px', 
+              background: '#000000', color: '#ffffff', 
               border: '1px solid rgba(244, 114, 182, 0.2)', 
-              borderRadius: '4px', 
-              fontSize: '14px',
-              textAlign: 'center'
+              borderRadius: '4px', fontSize: '13px', textAlign: 'center'
             }}
             onWheel={(e) => e.currentTarget.blur()}
           />
           <button 
-            style={buttonStyle}
+            style={{ ...buttonStyle, padding: '4px 6px' }}
             onMouseEnter={buttonHover}
             onMouseLeave={(e) => buttonLeave(e)}
             onClick={() => onFontSizeChange(Math.min(200, fontSize + 1))}
           >
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
           </button>
         </div>
       </div>
       
-      {/* 두 번째 줄: Text Color, B, I */}
+      {/* 2행: Text Color, Bold, Italic, Align */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Text Color */}
         <div style={{ position: 'relative' }} ref={textColorMenuRef}>
           <button 
             onClick={onToggleTextColorMenu}
             style={{ 
-              padding: '4px 12px', 
-              background: '#000000', 
-              borderRadius: '4px', 
-              fontSize: '14px', 
+              padding: '4px 8px', background: '#000000', borderRadius: '4px', fontSize: '13px', 
               border: '1px solid rgba(244, 114, 182, 0.2)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px',
-              color: '#ffffff',
-              cursor: 'pointer'
+              display: 'flex', alignItems: 'center', gap: '4px', color: '#ffffff', cursor: 'pointer'
             }}
             onMouseEnter={buttonHover}
             onMouseLeave={(e) => buttonLeave(e)}
           >
-            <span>Text Color</span>
-            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div style={{ width: '14px', height: '14px', background: textColor, borderRadius: '2px', border: '1px solid rgba(255,255,255,0.3)' }}></div>
+            <span>Color</span>
+            <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
           {showTextColorMenu && (
-            <div 
-              style={{ 
-                position: 'fixed', 
-                top: menuPosition.top, 
-                left: menuPosition.left, 
-                background: '#000000', 
-                border: '1px solid rgba(244, 114, 182, 0.2)', 
-                borderRadius: '4px', 
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)', 
-                zIndex: 1000,
-              }}
-            >
+            <div style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left, background: '#000000', border: '1px solid rgba(244, 114, 182, 0.2)', borderRadius: '4px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)', zIndex: 1000 }}>
               <ColorPicker
                 color={textColor}
                 onChange={(newColor) => {
-                  // 편집 모드인지 확인
                   const selection = window.getSelection();
                   const activeElement = document.activeElement as HTMLElement;
-                  
                   if (selection && !selection.isCollapsed && activeElement?.isContentEditable) {
-                    // 편집 모드: 선택된 텍스트에 색상 적용
                     document.execCommand('foreColor', false, newColor);
-                    console.log('[TextEditControls] execCommand foreColor 실행:', newColor);
                   }
-                  // 항상 toolbar 상태 업데이트 및 선택된 요소에 반영
                   onTextColorChange(newColor);
                 }}
                 onClose={onToggleTextColorMenu}
@@ -226,145 +183,80 @@ export function TextEditControls({
             </div>
           )}
         </div>
-        <button 
-          onMouseDown={(e) => {
-            // 편집 모드에서 포커스가 빠지지 않도록 방지
-            e.preventDefault();
-          }}
-          onClick={() => {
-            // 편집 모드인지 확인 (텍스트가 선택되어 있고, contentEditable 요소 내부인지)
-            const selection = window.getSelection();
-            const activeElement = document.activeElement as HTMLElement;
-            
-            if (selection && !selection.isCollapsed && activeElement?.isContentEditable) {
-              // 편집 모드: 선택된 텍스트에 bold 적용
-              document.execCommand('bold', false);
-              console.log('[TextEditControls] execCommand bold 실행');
-            }
-            // 항상 toolbar 상태 업데이트 및 선택된 요소에 반영
-            onFontWeightToggle();
-          }}
-          style={{ 
-            padding: '4px 12px', 
-            background: fontWeight === 'bold' ? '#1f1f1f' : '#000000', 
-            borderRadius: '4px', 
-            fontSize: '14px', 
-            border: '1px solid rgba(244, 114, 182, 0.2)', 
-            color: '#ffffff',
-            fontWeight: 'bold',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={buttonHover}
-          onMouseLeave={(e) => buttonLeave(e, fontWeight === 'bold')}
-        >
-          B
-        </button>
-        <button 
-          onMouseDown={(e) => {
-            // 편집 모드에서 포커스가 빠지지 않도록 방지
-            e.preventDefault();
-          }}
-          onClick={() => {
-            // 편집 모드인지 확인 (텍스트가 선택되어 있고, contentEditable 요소 내부인지)
-            const selection = window.getSelection();
-            const activeElement = document.activeElement as HTMLElement;
-            
-            if (selection && !selection.isCollapsed && activeElement?.isContentEditable) {
-              // 편집 모드: 선택된 텍스트에 italic 적용
-              document.execCommand('italic', false);
-              console.log('[TextEditControls] execCommand italic 실행');
-            }
-            // 항상 toolbar 상태 업데이트 및 선택된 요소에 반영
-            onFontStyleToggle();
-          }}
-          style={{ 
-            padding: '4px 12px', 
-            background: fontStyle === 'italic' ? '#1f1f1f' : '#000000', 
-            borderRadius: '4px', 
-            fontSize: '14px', 
-            border: '1px solid rgba(244, 114, 182, 0.2)', 
-            color: '#ffffff',
-            fontStyle: 'italic',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={buttonHover}
-          onMouseLeave={(e) => buttonLeave(e, fontStyle === 'italic')}
-        >
-          I
-        </button>
-      </div>
-      
-      {/* 세 번째 줄: 텍스트 정렬 버튼 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <button
-          onClick={() => onTextAlignChange('left')}
-          style={{ 
-            padding: '4px 8px', 
-            background: textAlign === 'left' ? 'rgba(249, 168, 212, 0.2)' : '#000000', 
-            borderRadius: '4px', 
-            fontSize: '14px', 
-            border: textAlign === 'left' ? '1px solid #f9a8d4' : '1px solid rgba(244, 114, 182, 0.2)',
-            color: '#ffffff',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={(e) => {
-            if (textAlign !== 'left') e.currentTarget.style.background = '#1f1f1f';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = textAlign === 'left' ? 'rgba(249, 168, 212, 0.2)' : '#000000';
-          }}
-        >
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M3 3h18v2H3V3zm0 4h12v2H3V7zm0 4h18v2H3v-2zm0 4h12v2H3v-2zm0 4h18v2H3v-2z" />
-          </svg>
-        </button>
-        <button
-          onClick={() => onTextAlignChange('center')}
-          style={{ 
-            padding: '4px 8px', 
-            background: textAlign === 'center' ? 'rgba(249, 168, 212, 0.2)' : '#000000', 
-            borderRadius: '4px', 
-            fontSize: '14px', 
-            border: textAlign === 'center' ? '1px solid #f9a8d4' : '1px solid rgba(244, 114, 182, 0.2)',
-            color: '#ffffff',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={(e) => {
-            if (textAlign !== 'center') e.currentTarget.style.background = '#1f1f1f';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = textAlign === 'center' ? 'rgba(249, 168, 212, 0.2)' : '#000000';
-          }}
-        >
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M3 3h18v2H3V3zm3 4h12v2H6V7zm-3 4h18v2H3v-2zm3 4h12v2H6v-2zm-3 4h18v2H3v-2z" />
-          </svg>
-        </button>
-        <button
-          onClick={() => onTextAlignChange('right')}
-          style={{ 
-            padding: '4px 8px', 
-            background: textAlign === 'right' ? 'rgba(249, 168, 212, 0.2)' : '#000000', 
-            borderRadius: '4px', 
-            fontSize: '14px', 
-            border: textAlign === 'right' ? '1px solid #f9a8d4' : '1px solid rgba(244, 114, 182, 0.2)',
-            color: '#ffffff',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={(e) => {
-            if (textAlign !== 'right') e.currentTarget.style.background = '#1f1f1f';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = textAlign === 'right' ? 'rgba(249, 168, 212, 0.2)' : '#000000';
-          }}
-        >
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M3 3h18v2H3V3zm6 4h12v2H9V7zm-6 4h18v2H3v-2zm6 4h12v2H9v-2zm-6 4h18v2H3v-2z" />
-          </svg>
-        </button>
+        
+        {/* Bold & Italic */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+          <button 
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              const selection = window.getSelection();
+              const activeElement = document.activeElement as HTMLElement;
+              if (selection && !selection.isCollapsed && activeElement?.isContentEditable) {
+                document.execCommand('bold', false);
+              }
+              onFontWeightToggle();
+            }}
+            style={{ 
+              padding: '4px 10px', 
+              background: fontWeight === 'bold' ? '#1f1f1f' : '#000000', 
+              borderRadius: '4px', fontSize: '13px', 
+              border: '1px solid rgba(244, 114, 182, 0.2)', 
+              color: '#ffffff', fontWeight: 'bold', cursor: 'pointer'
+            }}
+            onMouseEnter={buttonHover}
+            onMouseLeave={(e) => buttonLeave(e, fontWeight === 'bold')}
+          >
+            B
+          </button>
+          <button 
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              const selection = window.getSelection();
+              const activeElement = document.activeElement as HTMLElement;
+              if (selection && !selection.isCollapsed && activeElement?.isContentEditable) {
+                document.execCommand('italic', false);
+              }
+              onFontStyleToggle();
+            }}
+            style={{ 
+              padding: '4px 10px', 
+              background: fontStyle === 'italic' ? '#1f1f1f' : '#000000', 
+              borderRadius: '4px', fontSize: '13px', 
+              border: '1px solid rgba(244, 114, 182, 0.2)', 
+              color: '#ffffff', fontStyle: 'italic', cursor: 'pointer'
+            }}
+            onMouseEnter={buttonHover}
+            onMouseLeave={(e) => buttonLeave(e, fontStyle === 'italic')}
+          >
+            I
+          </button>
+        </div>
+        
+        {/* Text Align */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+          {(['left', 'center', 'right'] as const).map((align) => (
+            <button
+              key={align}
+              onClick={() => onTextAlignChange(align)}
+              style={{ 
+                padding: '4px 6px', 
+                background: textAlign === align ? 'rgba(249, 168, 212, 0.2)' : '#000000', 
+                borderRadius: '4px', 
+                border: textAlign === align ? '1px solid #f9a8d4' : '1px solid rgba(244, 114, 182, 0.2)',
+                color: '#ffffff', cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => { if (textAlign !== align) e.currentTarget.style.background = '#1f1f1f'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = textAlign === align ? 'rgba(249, 168, 212, 0.2)' : '#000000'; }}
+            >
+              <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                {align === 'left' && <path d="M3 3h18v2H3V3zm0 4h12v2H3V7zm0 4h18v2H3v-2zm0 4h12v2H3v-2zm0 4h18v2H3v-2z" />}
+                {align === 'center' && <path d="M3 3h18v2H3V3zm3 4h12v2H6V7zm-3 4h18v2H3v-2zm3 4h12v2H6v-2zm-3 4h18v2H3v-2z" />}
+                {align === 'right' && <path d="M3 3h18v2H3V3zm6 4h12v2H9V7zm-6 4h18v2H3v-2zm6 4h12v2H9v-2zm-6 4h18v2H3v-2z" />}
+              </svg>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
-
-
