@@ -135,17 +135,6 @@ export function Canvas() {
     setDrawingMode(shapeType as DrawingModeType);
   };
   
-  // Image selection handler
-  const handleImageSelect = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const imageUrl = event.target?.result as string;
-      // TODO: Implement image addition logic
-      console.log('Image added:', imageUrl);
-    };
-    reader.readAsDataURL(file);
-  };
-
   // fontSize 변경 핸들러
   const handleFontSizeChange = (fontSize: number) => {
     console.log('[Canvas] fontSize changed:', fontSize, 'selected element:', selectedElementId);
@@ -503,7 +492,6 @@ export function Canvas() {
         <Toolbar
           onAddText={handleAddText}
           onShapeSelect={handleShapeSelect}
-          onImageSelect={handleImageSelect}
           onFontSizeChange={handleFontSizeChange}
           onFontFamilyChange={handleFontFamilyChange}
           onFontWeightChange={handleFontWeightChange}
