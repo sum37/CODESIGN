@@ -97,7 +97,7 @@ jobs:
 
       # 스테이징 아티팩트 업로드 (다운로드 가능)
       - name: Upload staging artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact-name }}
           path: |
