@@ -2,6 +2,146 @@
 
 UI ↔ Code 양방향 수정 IDE (React + TypeScript + Tauri)
 
+---
+
+## 빠른 시작
+
+```bash
+# 의존성 설치
+npm install
+
+# 개발 모드 실행
+npm run tauri:dev
+```
+
+---
+
+## Linter & Type Checker
+
+### Type Check 실행
+
+```bash
+npm run typecheck
+```
+
+또는
+
+```bash
+npm run lint
+```
+
+TypeScript 컴파일러(`tsc`)를 사용하여 타입 검사를 수행합니다. 에러가 없으면 아무 출력 없이 종료됩니다.
+
+### 예상 출력 (성공 시)
+
+```bash
+$ npm run typecheck
+
+> codesign-ide@0.1.0 typecheck
+> tsc --noEmit
+
+$  # 에러 없음
+```
+
+---
+
+## 테스트
+
+### 테스트 실행
+
+```bash
+# 모든 테스트 실행
+npm test
+
+# 단일 실행 (watch 모드 없이)
+npm test -- --run
+
+# 커버리지 포함 테스트 실행
+npm run test:coverage
+
+# UI 모드로 테스트 실행
+npm run test:ui
+```
+
+### 예상 출력 (성공 시)
+
+```bash
+$ npm run test:coverage -- --run
+
+ ✓ src/lib/ast/__tests__/componentParser.test.ts (150 tests)
+ ✓ src/lib/ast/__tests__/codeModifier.test.ts (50 tests)
+ ✓ src/stores/__tests__/canvasStore.test.ts (30 tests)
+ ...
+
+ Test Files  7 passed (7)
+      Tests  322 passed (322)
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|
+All files          |   71.13 |    60.05 |    73.4 |   70.64 |
+-------------------|---------|----------|---------|---------|
+```
+
+### 테스트 커버리지
+
+- **목표**: 60% 이상 (메인 로직 기준)
+- **테스트 대상**:
+  - AST 파싱 및 코드 수정 로직 (`src/lib/ast/`)
+  - Tailwind 파서 (`src/lib/utils/`)
+  - 상태 관리 로직 (`src/stores/`)
+
+---
+
+## 배포 (Deployment)
+
+### GitHub Actions 자동 배포
+
+이 프로젝트는 GitHub Actions를 통해 자동으로 빌드 및 배포됩니다.
+
+#### 워크플로우 구조
+
+| 브랜치/이벤트 | 워크플로우 | 동작 |
+|--------------|-----------|------|
+| `develop` push | `ci.yml` | 린트, 타입체크, 테스트, 빌드 검증 |
+| `main` push | `staging.yml` | CI + 스테이징 빌드 아티팩트 생성 |
+| `v*` 태그 push | `release.yml` | 프로덕션 릴리즈 (Windows, macOS, Linux) |
+
+#### 수동 배포 방법
+
+1. **develop 브랜치에서 개발**
+   ```bash
+   git checkout develop
+   git add .
+   git commit -m "feat: new feature"
+   git push origin develop
+   ```
+
+2. **main 브랜치로 PR 및 머지**
+   ```bash
+   # GitHub에서 PR 생성: develop → main
+   # 리뷰 후 머지
+   ```
+
+3. **릴리즈 생성 (태그 푸시)**
+   ```bash
+   git checkout main
+   git pull origin main
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+
+4. **릴리즈 다운로드**
+   - GitHub → Releases 페이지에서 각 플랫폼별 설치 파일 다운로드
+   - Windows: `.msi` / macOS: `.dmg` / Linux: `.AppImage`, `.deb`
+
+#### GitHub Actions 워크플로우 파일
+
+- `.github/workflows/ci.yml` - CI 파이프라인
+- `.github/workflows/staging.yml` - 스테이징 배포
+- `.github/workflows/release.yml` - 프로덕션 릴리즈
+
+---
+
 ## 프로젝트 구조
 
 ```
@@ -104,31 +244,6 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-## 테스트
-
-### 테스트 실행
-
-```bash
-# 모든 테스트 실행
-npm test
-
-# UI 모드로 테스트 실행
-npm run test:ui
-
-# 커버리지 포함 테스트 실행
-npm run test:coverage
-```
-
-### 테스트 커버리지
-
-테스트 커버리지는 60% 이상을 목표로 합니다. 메인 로직(UI가 아닌 핵심 비즈니스 로직)에 대한 테스트를 포함합니다:
-
-- **AST 파싱 및 코드 수정 로직** (`src/lib/ast/`)
-- **파일 시스템 유틸리티** (`src/lib/fileSystem/`)
-- **상태 관리 로직** (`src/stores/`)
-
-테스트는 `src/lib/`, `src/stores/` 디렉토리의 `__tests__` 폴더에 위치합니다.
-
 ## 개발 가이드
 
 ### AST 동기화 엔진
@@ -158,8 +273,22 @@ npm run test:coverage
 - [ ] 테마 지원
 - [ ] 플러그인 시스템
 
+---
+
+## 프로젝트 관리
+
+### 관련 링크
+
+| 항목 | 링크 |
+|-----|------|
+| **현재 저장소** | [sum37/EE309_ver5](https://github.com/sum37/EE309_ver5) |
+| **이전 저장소** | [sorimute/EE309-Project](https://github.com/sorimute/EE309-Project) |
+| **칸반 보드** | [GitHub Projects](https://github.com/users/sorimute/projects/1) |
+
+> ⚠️ 프로젝트 초기에 `sorimute/EE309-Project`에서 개발을 진행했으나, 구조 개선을 위해 현재 저장소로 베이스를 이전했습니다.
+
+---
+
 ## 라이선스
 
 MIT
-
-# CODESIGN

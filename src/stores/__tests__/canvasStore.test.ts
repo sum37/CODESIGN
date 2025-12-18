@@ -108,6 +108,25 @@ describe('canvasStore', () => {
       setDrawingMode(null);
       expect(useCanvasStore.getState().drawingMode).toBeNull();
     });
+
+    it('should set various shape types', () => {
+      const { setDrawingMode } = useCanvasStore.getState();
+      
+      setDrawingMode('circle');
+      expect(useCanvasStore.getState().drawingMode).toBe('circle');
+      
+      setDrawingMode('triangle');
+      expect(useCanvasStore.getState().drawingMode).toBe('triangle');
+      
+      setDrawingMode('textbox');
+      expect(useCanvasStore.getState().drawingMode).toBe('textbox');
+      
+      setDrawingMode('ellipse');
+      expect(useCanvasStore.getState().drawingMode).toBe('ellipse');
+      
+      setDrawingMode('star');
+      expect(useCanvasStore.getState().drawingMode).toBe('star');
+    });
   });
 
   describe('selectedElementSize', () => {
@@ -118,6 +137,141 @@ describe('canvasStore', () => {
       
       setSelectedElementSize({ width: 200, height: 300 });
       expect(useCanvasStore.getState().selectedElementSize).toEqual({ width: 200, height: 300 });
+    });
+  });
+
+  describe('selectedElementLoc', () => {
+    it('should set and get selected element location', () => {
+      const { setSelectedElementLoc } = useCanvasStore.getState();
+      
+      expect(useCanvasStore.getState().selectedElementLoc).toBeNull();
+      
+      const loc = {
+        start: { line: 1, column: 0 },
+        end: { line: 1, column: 50 },
+      };
+      
+      setSelectedElementLoc(loc);
+      expect(useCanvasStore.getState().selectedElementLoc).toEqual(loc);
+      
+      setSelectedElementLoc(null);
+      expect(useCanvasStore.getState().selectedElementLoc).toBeNull();
+    });
+  });
+
+  describe('selectedElementType', () => {
+    it('should set and get selected element type', () => {
+      const { setSelectedElementType } = useCanvasStore.getState();
+      
+      expect(useCanvasStore.getState().selectedElementType).toBeNull();
+      
+      setSelectedElementType('div');
+      expect(useCanvasStore.getState().selectedElementType).toBe('div');
+      
+      setSelectedElementType('svg');
+      expect(useCanvasStore.getState().selectedElementType).toBe('svg');
+      
+      setSelectedElementType(null);
+      expect(useCanvasStore.getState().selectedElementType).toBeNull();
+    });
+  });
+
+  describe('selectedElementHasBorderRadius', () => {
+    it('should set and get border radius flag', () => {
+      const { setSelectedElementHasBorderRadius } = useCanvasStore.getState();
+      
+      expect(useCanvasStore.getState().selectedElementHasBorderRadius).toBe(false);
+      
+      setSelectedElementHasBorderRadius(true);
+      expect(useCanvasStore.getState().selectedElementHasBorderRadius).toBe(true);
+      
+      setSelectedElementHasBorderRadius(false);
+      expect(useCanvasStore.getState().selectedElementHasBorderRadius).toBe(false);
+    });
+  });
+
+  describe('selectedElementBorderRadius', () => {
+    it('should set and get border radius value', () => {
+      const { setSelectedElementBorderRadius } = useCanvasStore.getState();
+      
+      expect(useCanvasStore.getState().selectedElementBorderRadius).toBe(0);
+      
+      setSelectedElementBorderRadius(10);
+      expect(useCanvasStore.getState().selectedElementBorderRadius).toBe(10);
+      
+      setSelectedElementBorderRadius(25);
+      expect(useCanvasStore.getState().selectedElementBorderRadius).toBe(25);
+    });
+  });
+
+  describe('isDrawing', () => {
+    it('should set and get drawing state', () => {
+      const { setIsDrawing } = useCanvasStore.getState();
+      
+      expect(useCanvasStore.getState().isDrawing).toBe(false);
+      
+      setIsDrawing(true);
+      expect(useCanvasStore.getState().isDrawing).toBe(true);
+      
+      setIsDrawing(false);
+      expect(useCanvasStore.getState().isDrawing).toBe(false);
+    });
+  });
+
+  describe('drawStartPosition', () => {
+    it('should set and get draw start position', () => {
+      const { setDrawStartPosition } = useCanvasStore.getState();
+      
+      expect(useCanvasStore.getState().drawStartPosition).toBeNull();
+      
+      setDrawStartPosition({ x: 100, y: 200 });
+      expect(useCanvasStore.getState().drawStartPosition).toEqual({ x: 100, y: 200 });
+      
+      setDrawStartPosition(null);
+      expect(useCanvasStore.getState().drawStartPosition).toBeNull();
+    });
+  });
+
+  describe('drawCurrentPosition', () => {
+    it('should set and get draw current position', () => {
+      const { setDrawCurrentPosition } = useCanvasStore.getState();
+      
+      expect(useCanvasStore.getState().drawCurrentPosition).toBeNull();
+      
+      setDrawCurrentPosition({ x: 150, y: 250 });
+      expect(useCanvasStore.getState().drawCurrentPosition).toEqual({ x: 150, y: 250 });
+      
+      setDrawCurrentPosition(null);
+      expect(useCanvasStore.getState().drawCurrentPosition).toBeNull();
+    });
+  });
+
+  describe('drawing workflow', () => {
+    it('should handle complete drawing workflow', () => {
+      const store = useCanvasStore.getState();
+      
+      // 1. 그리기 모드 설정
+      store.setDrawingMode('rectangle');
+      expect(useCanvasStore.getState().drawingMode).toBe('rectangle');
+      
+      // 2. 그리기 시작
+      store.setIsDrawing(true);
+      store.setDrawStartPosition({ x: 0, y: 0 });
+      expect(useCanvasStore.getState().isDrawing).toBe(true);
+      expect(useCanvasStore.getState().drawStartPosition).toEqual({ x: 0, y: 0 });
+      
+      // 3. 그리기 중
+      store.setDrawCurrentPosition({ x: 100, y: 100 });
+      expect(useCanvasStore.getState().drawCurrentPosition).toEqual({ x: 100, y: 100 });
+      
+      // 4. 그리기 완료
+      store.setIsDrawing(false);
+      store.setDrawingMode(null);
+      store.setDrawStartPosition(null);
+      store.setDrawCurrentPosition(null);
+      
+      expect(useCanvasStore.getState().isDrawing).toBe(false);
+      expect(useCanvasStore.getState().drawingMode).toBeNull();
     });
   });
 });
