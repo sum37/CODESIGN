@@ -21,7 +21,7 @@
     "@babel/traverse": "^7.23.0",
     "@babel/types": "^7.23.0",
     "@monaco-editor/react": "^4.6.0",
-    "@tauri-apps/api": "^1.5.0",
+    "@tauri-apps/api": "^2.9.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-rnd": "^10.4.0",
