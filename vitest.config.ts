@@ -21,6 +21,9 @@ export default defineConfig({
         '**/*.spec.*',
         'src/main.tsx',
         'src/vite-env.d.ts',
+        // Tauri API 의존 파일들 (mock 없이 테스트 불가)
+        'src/lib/fileSystem/fileSystem.ts',
+        'src/lib/ast/importResolver.ts',
       ],
       thresholds: {
         lines: 60,
