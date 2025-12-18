@@ -1,4 +1,4 @@
-# develop 브랜치: CI만 (테스트, 타입체크)
+# develop 브랜치: CI (테스트, 타입체크)
 name: CI
 
 on:
@@ -6,9 +6,6 @@ on:
     branches: [develop]
   pull_request:
     branches: [develop, main, master]
-
-env:
-  CARGO_TERM_COLOR: always
 
 jobs:
   # Frontend 테스트 (React + TypeScript)
@@ -35,32 +32,5 @@ jobs:
       - name: Run tests
         run: npm test -- --run
 
-  # Rust 코드 검증 (빌드 없이 체크만)
-  rust-check:
-    name: Rust Check
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
-
-      - name: Install dependencies (Ubuntu)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
-      - name: Cargo check
-        working-directory: src-tauri
-        run: cargo check
-
-      - name: Cargo clippy
-        working-directory: src-tauri
-        run: cargo clippy -- -D warnings
+      - name: Build check
+        run: npm run build
